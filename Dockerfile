@@ -1,4 +1,5 @@
-FROM ubuntu:latest
-LABEL authors="neelavroshafin"
+FROM eclipse-temurin:21-jdk-alpine
+WORKDIR /app
 
-ENTRYPOINT ["top", "-b"]
+COPY target/id-card-service-0.0.1-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java", "-jar", "app.jar"]
