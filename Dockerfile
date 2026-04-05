@@ -8,4 +8,7 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 COPY target/id_card_service-0.0.1-SNAPSHOT.jar app.jar
+
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
+
 ENTRYPOINT ["java", "-jar", "app.jar"]

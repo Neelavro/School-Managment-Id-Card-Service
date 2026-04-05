@@ -4,7 +4,7 @@ services:
     ports:
       - "8085:8085"
     volumes:
-      - /root/.cache/ms-playwright:/root/.cache/ms-playwright
+      - /opt/pw-browsers:/opt/pw-browsers
     environment:
-      - PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
+      - PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers
     restart: unless-stopped
