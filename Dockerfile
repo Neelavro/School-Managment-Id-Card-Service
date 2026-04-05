@@ -1,14 +1,15 @@
-FROM eclipse-temurin:21-jdk-alpine
+FROM eclipse-temurin:21-jdk-jammy
 WORKDIR /app
 
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
+RUN apt-get update && apt-get install -y \
+    chromium-browser \
+    fonts-noto \
+    fonts-freefont-ttf \
+    libnss3 \
+    libfreetype6 \
+    libharfbuzz0b \
     ca-certificates \
-    ttf-freefont \
-    font-noto
+    --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 ENV PLAYWRIGHT_BROWSERS_PATH=/usr/bin
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
