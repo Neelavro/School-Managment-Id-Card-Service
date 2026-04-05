@@ -68,6 +68,7 @@ public class IdCardService {
             BufferedImage original = ImageIO.read(new java.io.ByteArrayInputStream(rawBytes));
             if (original == null) return "";
 
+            // Fix EXIF rotation
             try {
                 com.drew.metadata.Metadata metadata = com.drew.imaging.ImageMetadataReader
                         .readMetadata(new java.io.ByteArrayInputStream(rawBytes));
@@ -101,6 +102,21 @@ public class IdCardService {
                 System.err.println("Warning: Could not read EXIF, skipping rotation: " + exifEx.getMessage());
             }
 
+            // If still landscape after EXIF fix, force rotate 90 degrees
+            if (original.getWidth() > original.getHeight()) {
+                int newW = original.getHeight();
+                int newH = original.getWidth();
+                BufferedImage rotated = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_RGB);
+                Graphics2D gr = rotated.createGraphics();
+                gr.translate(newW / 2.0, newH / 2.0);
+                gr.rotate(Math.toRadians(90));
+                gr.translate(-original.getWidth() / 2.0, -original.getHeight() / 2.0);
+                gr.drawImage(original, 0, 0, null);
+                gr.dispose();
+                original = rotated;
+            }
+
+            // Scale down to 140px wide, preserve aspect ratio
             int targetW = 140;
             int targetH = (int) ((double) original.getHeight() / original.getWidth() * targetW);
 
@@ -111,6 +127,7 @@ public class IdCardService {
             g.drawImage(original, 0, 0, targetW, targetH, null);
             g.dispose();
 
+            // Decrease JPEG quality until under 250 KB
             float quality = 0.85f;
             byte[] result = null;
 
