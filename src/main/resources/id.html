@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+
+        body{
+            background:#f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+
+        .card{
+            width:320px;
+            height:500px;
+            background:linear-gradient(#d9ecf7,#ffffff);
+            border:2px dashed #999;
+            padding:15px;
+            position:relative;
+        }
+
+        /* Header */
+
+        .school{
+            text-align:center;
+        }
+
+        .school h2{
+            margin:0;
+            color:#1d3e8a;
+        }
+
+        .school p{
+            margin:3px 0 10px;
+            font-size:14px;
+        }
+
+        /* Vertical Bars */
+
+        .id-bar{
+            position:absolute;
+            left:0;
+            top:150px;
+            background:#1d5bbf;
+            color:white;
+            padding:10px 5px;
+            writing-mode:vertical-rl;
+            transform:rotate(180deg);
+            font-weight:bold;
+        }
+
+        .student-id{
+            position:absolute;
+            right:0;
+            top:150px;
+            background:#1d5bbf;
+            color:white;
+            padding:10px 5px;
+            writing-mode:vertical-rl;
+            font-weight:bold;
+        }
+
+        /* Photo */
+
+        .photo{
+            width:110px;
+            height:120px;
+            border:3px solid #4da3d9;
+            margin:10px auto;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            color:#666;
+            font-size:12px;
+        }
+
+        /* Name */
+
+        .name{
+            text-align:center;
+            color:#7a1fa2;
+            font-weight:bold;
+            margin:8px 0;
+        }
+
+        /* Info Table */
+
+        .info{
+            width:100%;
+            margin-top:10px;
+        }
+
+        .info td{
+            padding:3px 2px;
+            font-size:14px;
+        }
+
+        .label{
+            width:80px;
+            font-weight:bold;
+        }
+
+        /* Signature */
+
+        .signature{
+            position:absolute;
+            bottom:45px;
+            width:90%;
+            left:5%;
+            text-align:right;
+        }
+
+        .signature-line{
+            border-top:1px dashed #555;
+            margin-bottom:3px;
+        }
+
+        .principal{
+            font-size:14px;
+        }
+
+        /* Bottom Bar */
+
+        .bottom{
+            position:absolute;
+            bottom:0;
+            left:0;
+            width:100%;
+            height:35px;
+            background:linear-gradient(90deg,#2aa4d4,#1d5bbf);
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <div class="school">
+        <h2>TAMIRUL MILLAT KAMIL MADRASAH</h2>
+        <p>ERSHADNAGAR, TONGI, GAZIPUR</p>
+    </div>
+
+    <div class="id-bar">ID CARD</div>
+
+    <div class="student-id">542180</div>
+
+    <div class="photo">
+        Student Photo
+    </div>
+
+    <div class="name">
+        Student Name
+    </div>
+
+    <table class="info">
+        <tr><td class="label">Class</td><td>: Nine</td></tr>
+        <tr><td class="label">Shift</td><td>: Day</td></tr>
+        <tr><td class="label">Section</td><td>: Golap</td></tr>
+        <tr><td class="label">Group</td><td>: Science</td></tr>
+        <tr><td class="label">Roll</td><td>: 1</td></tr>
+        <tr><td class="label">Year</td><td>: 2026</td></tr>
+        <tr><td class="label">Mobile</td><td>: 01750316386</td></tr>
+    </table>
+
+    <div class="signature">
+        <div class="signature-line"></div>
+        <div class="principal">Principal</div>
+    </div>
+
+    <div class="bottom"></div>
+
+</div>
+
+</body>
+</html>

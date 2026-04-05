@@ -1,0 +1,5 @@
+services:
+  id-card-service:
+    build: .
+    ports:
+      - "8085:8085"
