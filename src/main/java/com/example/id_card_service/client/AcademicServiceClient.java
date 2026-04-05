@@ -35,25 +35,40 @@ public class AcademicServiceClient {
         if (sectionId       != null) url.append("&sectionId=").append(sectionId);
         if (groupId         != null) url.append("&groupId=").append(groupId);
 
+        System.out.println("Calling enrollment API: " + url);
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url.toString()))
                 .GET()
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        System.out.println("Response status: " + response.statusCode());
+        System.out.println("Response body (first 500 chars): " + response.body().substring(0, Math.min(500, response.body().length())));
+
         JsonNode root = objectMapper.readTree(response.body());
 
-        // Adjust these path keys to match your ApiResponse wrapper
-        JsonNode content = root.path("data").path("content");
-        if (content.isMissingNode()) content = root.path("data");
+        // Log the structure
+        System.out.println("Root keys: " + root.fieldNames());
+        JsonNode dataNode = root.path("data");
+        System.out.println("data node type: " + dataNode.getNodeType());
+        JsonNode content = dataNode.path("content");
+        System.out.println("content node type: " + content.getNodeType());
+
+        if (content.isMissingNode()) content = dataNode;
         if (content.isMissingNode()) content = root;
 
         List<EnrollmentResponseDto> list = new ArrayList<>();
         if (content.isArray()) {
+            System.out.println("Found " + content.size() + " enrollments");
             for (JsonNode node : content) {
                 list.add(objectMapper.treeToValue(node, EnrollmentResponseDto.class));
             }
+        } else {
+            System.out.println("Content is not an array: " + content.getNodeType());
         }
+
         return list;
     }
 }
