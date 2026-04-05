@@ -15,6 +15,7 @@ import javax.imageio.stream.ImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -40,22 +41,18 @@ public class IdCardService {
     @PostConstruct
     public void init() {
         try {
-            byte[] imageBytes = Files.readAllBytes(
-                    Paths.get("src/main/resources/static/signature.jpeg")
-            );
+            InputStream is = getClass().getResourceAsStream("/static/signature.jpeg");
             signatureBase64 = "data:image/jpeg;base64,"
-                    + Base64.getEncoder().encodeToString(imageBytes);
+                    + Base64.getEncoder().encodeToString(is.readAllBytes());
         } catch (Exception e) {
             signatureBase64 = "";
             System.err.println("Warning: Could not load signature image. " + e.getMessage());
         }
 
         try {
-            byte[] imageBytes = Files.readAllBytes(
-                    Paths.get("src/main/resources/static/logo.png")
-            );
+            InputStream is = getClass().getResourceAsStream("/static/logo.png");
             logoBase64 = "data:image/png;base64,"
-                    + Base64.getEncoder().encodeToString(imageBytes);
+                    + Base64.getEncoder().encodeToString(is.readAllBytes());
         } catch (Exception e) {
             logoBase64 = "";
             System.err.println("Warning: Could not load logo image. " + e.getMessage());
