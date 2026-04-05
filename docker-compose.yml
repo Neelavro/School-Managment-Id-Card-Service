@@ -3,3 +3,8 @@ services:
     build: .
     ports:
       - "8085:8085"
+    volumes:
+      - /root/.cache/ms-playwright:/root/.cache/ms-playwright
+    environment:
+      - PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
+    restart: unless-stopped
