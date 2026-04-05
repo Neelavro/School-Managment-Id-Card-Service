@@ -45,19 +45,9 @@ public class AcademicServiceClient {
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
         System.out.println("Response status: " + response.statusCode());
-        System.out.println("Response body (first 500 chars): " + response.body().substring(0, Math.min(500, response.body().length())));
 
         JsonNode root = objectMapper.readTree(response.body());
-
-        // Log the structure
-        System.out.println("Root keys: " + root.fieldNames());
-        JsonNode dataNode = root.path("data");
-        System.out.println("data node type: " + dataNode.getNodeType());
-        JsonNode content = dataNode.path("content");
-        System.out.println("content node type: " + content.getNodeType());
-
-        if (content.isMissingNode()) content = dataNode;
-        if (content.isMissingNode()) content = root;
+        JsonNode content = root.path("content");
 
         List<EnrollmentResponseDto> list = new ArrayList<>();
         if (content.isArray()) {
