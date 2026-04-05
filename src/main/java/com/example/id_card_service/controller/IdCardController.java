@@ -6,6 +6,7 @@ import com.example.id_card_service.service.IdCardService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,6 +49,8 @@ public class IdCardController {
                     })
                     .collect(Collectors.toList());
         }
+
+        enrollments.sort(Comparator.comparingInt(e -> e.getClassRoll() != null ? e.getClassRoll() : 0));
 
         byte[] pdfBytes = idCardService.generatePdf(enrollments);
 
