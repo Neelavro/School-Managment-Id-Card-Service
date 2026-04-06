@@ -220,7 +220,7 @@ public class IdCardService {
 
                     .append("<div class=\"school\">")
                     .append("<h2>LUTFUR RAHMAN ALIM MADRASAH</h2>")
-                    .append("<p>LUTFUR RAHMAN SARAK, NATULLABAD, BARISHAL</p>")
+                    .append("<p>LUTFUR RAHMAN ROAD, NATULLABAD, BARISHAL</p>")
                     .append("</div>")
 
                     .append("<div class=\"id-bar\">ID CARD</div>")
@@ -295,7 +295,7 @@ public class IdCardService {
 
                 + "<div class=\"back-info\">"
                 + "<div><span class=\"back-label\">EIIN:</span> 137732</div>"
-                + "<div>LUTFUR RAHMAN SARAK</div>"
+                + "<div>LUTFUR RAHMAN ROAD</div>"
                 + "<div>NATULLABAD, BARISHAL</div>"
                 + "<div><span class=\"back-label\">Mobile:</span> 01712-951422</div>"
                 + "<div><span class=\"back-label\">Email:</span><br>lutfurrahmanmodelmadrasah2003@gmail.com</div>"
