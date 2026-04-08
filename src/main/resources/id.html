@@ -1,176 +1,217 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>ID Card – Lutfur Rahman Alim Madrasah</title>
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body{
-            background:#f5f5f5;
-            font-family: Arial, sans-serif;
+        body {
+          min-height: 100vh;
+          background: #c8d8cc;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: Arial, Helvetica, sans-serif;
         }
 
-        .card{
-            width:320px;
-            height:500px;
-            background:linear-gradient(#d9ecf7,#ffffff);
-            border:2px dashed #999;
-            padding:15px;
-            position:relative;
+        .card {
+          width: 320px;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 18px 50px rgba(0,0,0,0.28), 0 4px 16px rgba(0,0,0,0.14);
+          background: #ffffff;
+          position: relative;
         }
 
-        /* Header */
-
-        .school{
-            text-align:center;
+        /* ── HEADER — teal strip, same height as footer ── */
+        .card-header {
+          background: #2e7d6e;
+          height: 28px;
         }
 
-        .school h2{
-            margin:0;
-            color:#1d3e8a;
+        /* ── BODY ── */
+        .card-body {
+          background: linear-gradient(to bottom, #b8ddf5 0%, #d4eefb 40%, #eaf6fd 65%, #ffffff 100%);
+          padding: 10px 14px 14px;
+          position: relative;
+          overflow: hidden;
         }
 
-        .school p{
-            margin:3px 0 10px;
-            font-size:14px;
+        /* School name & address */
+        .school-info {
+          text-align: center;
+          margin-bottom: 10px;
+          position: relative;
+          z-index: 1;
+        }
+        .school-name {
+          font-size: 14.5px;
+          font-weight: 900;
+          color: #1a3a8a;
+          letter-spacing: 0.3px;
+          line-height: 1.25;
+        }
+        .school-address {
+          font-size: 9.5px;
+          color: #cc1a1a;
+          letter-spacing: 0.4px;
+          margin-top: 2px;
+          font-weight: 700;
+          text-transform: uppercase;
         }
 
-        /* Vertical Bars */
-
-        .id-bar{
-            position:absolute;
-            left:0;
-            top:150px;
-            background:#1d5bbf;
-            color:white;
-            padding:10px 5px;
-            writing-mode:vertical-rl;
-            transform:rotate(180deg);
-            font-weight:bold;
+        /* Arc SVG */
+        .arc-svg {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          pointer-events: none;
+          z-index: 0;
         }
 
-        .student-id{
-            position:absolute;
-            right:0;
-            top:150px;
-            background:#1d5bbf;
-            color:white;
-            padding:10px 5px;
-            writing-mode:vertical-rl;
-            font-weight:bold;
+        /* ── PHOTO ROW ── */
+        .photo-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+          position: relative;
+          z-index: 1;
+        }
+        .side-badge {
+          background: #f5c518;
+          color: #1a1a1a;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          writing-mode: vertical-rl;
+          text-orientation: mixed;
+          padding: 10px 5px;
+          border-radius: 5px;
+          line-height: 1;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+          flex-shrink: 0;
+          align-self: center;
+        }
+        .side-badge.right { transform: rotate(180deg); letter-spacing: 1.5px; }
+
+        .photo-frame {
+          width: 108px;
+          height: 122px;
+          border: 3px solid #2e7d6e;
+          border-radius: 4px;
+          overflow: hidden;
+          background: #b8d8f0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 10px rgba(46,125,110,0.22);
+        }
+        .photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-placeholder { font-size: 11px; color: #4a7a9a; text-align: center; line-height: 1.5; }
+
+        /* ── STUDENT NAME ── */
+        .student-name {
+          font-size: 17px;
+          font-weight: 900;
+          color: #5b1fa8;
+          text-align: center;
+          letter-spacing: 0.4px;
+          margin: 0 0 10px;
+          position: relative;
+          z-index: 1;
         }
 
-        /* Photo */
-
-        .photo{
-            width:110px;
-            height:120px;
-            border:3px solid #4da3d9;
-            margin:10px auto;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            color:#666;
-            font-size:12px;
+        /* ── INFO TABLE ── */
+        .info-table {
+          width: 100%;
+          border-collapse: collapse;
+          position: relative;
+          z-index: 1;
         }
+        .info-table td { padding: 3.5px 2px; font-size: 12.5px; color: #111; line-height: 1.35; }
+        .info-table td.lbl { font-weight: 700; width: 66px; }
+        .info-table td.sep { width: 12px; color: #444; }
+        .info-table td.val { font-weight: 600; }
+        .info-table tr:not(:last-child) td { border-bottom: 1px dashed #cde8d0; }
 
-        /* Name */
-
-        .name{
-            text-align:center;
-            color:#7a1fa2;
-            font-weight:bold;
-            margin:8px 0;
+        /* ── SIGNATURE ── */
+        .sig-area {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          margin-top: 8px;
+          padding-right: 6px;
+          position: relative;
+          z-index: 1;
         }
+        .sig-ink { display: block; margin-bottom: 2px; }
+        .sig-line { border-top: 1.5px dashed #555; width: 115px; margin-bottom: 2px; }
+        .principal-label { font-size: 11px; font-weight: 700; color: #222; letter-spacing: 1px; }
 
-        /* Info Table */
-
-        .info{
-            width:100%;
-            margin-top:10px;
+        /* ── FOOTER — same height as header ── */
+        .card-footer {
+          background: #2e7d6e;
+          height: 28px;
         }
-
-        .info td{
-            padding:3px 2px;
-            font-size:14px;
-        }
-
-        .label{
-            width:80px;
-            font-weight:bold;
-        }
-
-        /* Signature */
-
-        .signature{
-            position:absolute;
-            bottom:45px;
-            width:90%;
-            left:5%;
-            text-align:right;
-        }
-
-        .signature-line{
-            border-top:1px dashed #555;
-            margin-bottom:3px;
-        }
-
-        .principal{
-            font-size:14px;
-        }
-
-        /* Bottom Bar */
-
-        .bottom{
-            position:absolute;
-            bottom:0;
-            left:0;
-            width:100%;
-            height:35px;
-            background:linear-gradient(90deg,#2aa4d4,#1d5bbf);
-        }
-
     </style>
 </head>
-
 <body>
-
 <div class="card">
 
-    <div class="school">
-        <h2>TAMIRUL MILLAT KAMIL MADRASAH</h2>
-        <p>ERSHADNAGAR, TONGI, GAZIPUR</p>
+    <!-- HEADER -->
+    <div class="card-header"></div>
+
+    <!-- BODY -->
+    <div class="card-body">
+
+        <div class="school-info">
+            <div class="school-name">LUTFUR RAHMAN ALIM MADRASAH</div>
+            <div class="school-address">LUTFUR RAHMAN ROAD, NATULLABAD, BARISHAL</div>
+        </div>
+
+        <svg class="arc-svg" viewBox="0 0 320 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" height="160">
+            <path d="M0,160 L320,160 L320,40 Q160,148 0,128 Z" fill="#cdeeb7"/>
+        </svg>
+
+        <div class="photo-row">
+            <div class="side-badge left">ID&nbsp;CARD</div>
+            <div class="photo-frame">
+                <div class="photo-placeholder">Student<br/>Photo</div>
+            </div>
+            <div class="side-badge right">20230918</div>
+        </div>
+
+        <div class="student-name">MST. MURSHIDA JANNAT</div>
+
+        <table class="info-table">
+            <tr><td class="lbl">Class</td><td class="sep">:</td><td class="val">NURANI NURSARY</td></tr>
+            <tr><td class="lbl">Shift</td><td class="sep">:</td><td class="val">MORNING</td></tr>
+            <tr><td class="lbl">Section</td><td class="sep">:</td><td class="val">BELY</td></tr>
+            <tr><td class="lbl">Group</td><td class="sep">:</td><td class="val">N/A</td></tr>
+            <tr><td class="lbl">Roll</td><td class="sep">:</td><td class="val">15</td></tr>
+            <tr><td class="lbl">Year</td><td class="sep">:</td><td class="val">2025</td></tr>
+            <tr><td class="lbl">Mobile</td><td class="sep">:</td><td class="val">01703336821</td></tr>
+        </table>
+
+        <div class="sig-area">
+            <svg class="sig-ink" width="100" height="30" viewBox="0 0 100 30" fill="none">
+                <path d="M4 24 C14 8, 22 5, 32 14 C40 22, 44 10, 55 7 C66 4, 74 16, 82 11 C88 7, 93 11, 96 17"
+                      stroke="#222" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+            </svg>
+            <div class="sig-line"></div>
+            <div class="principal-label">PRINCIPAL</div>
+        </div>
+
     </div>
 
-    <div class="id-bar">ID CARD</div>
-
-    <div class="student-id">542180</div>
-
-    <div class="photo">
-        Student Photo
-    </div>
-
-    <div class="name">
-        Student Name
-    </div>
-
-    <table class="info">
-        <tr><td class="label">Class</td><td>: Nine</td></tr>
-        <tr><td class="label">Shift</td><td>: Day</td></tr>
-        <tr><td class="label">Section</td><td>: Golap</td></tr>
-        <tr><td class="label">Group</td><td>: Science</td></tr>
-        <tr><td class="label">Roll</td><td>: 1</td></tr>
-        <tr><td class="label">Year</td><td>: 2026</td></tr>
-        <tr><td class="label">Mobile</td><td>: 01750316386</td></tr>
-    </table>
-
-    <div class="signature">
-        <div class="signature-line"></div>
-        <div class="principal">Principal</div>
-    </div>
-
-    <div class="bottom"></div>
+    <!-- FOOTER -->
+    <div class="card-footer"></div>
 
 </div>
-
 </body>
 </html>

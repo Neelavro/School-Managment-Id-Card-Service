@@ -17,8 +17,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.List;
 
@@ -216,56 +214,101 @@ public class IdCardService {
                     ? fetchAndCompressToBase64(s.getImage().getImageUrl())
                     : "";
 
-            cards.append("<div class=\"card\">")
+            String photoTag = photoUrl.isEmpty()
+                    ? "<div class=\"photo-placeholder\">Photo</div>"
+                    : "<img src=\"" + photoUrl + "\" style=\"width:100%;height:100%;object-fit:cover;\">";
 
-                    .append("<div class=\"school\">")
-                    .append("<h2>LUTFUR RAHMAN ALIM MADRASAH</h2>")
-                    .append("<p>LUTFUR RAHMAN ROAD, NATULLABAD, BARISHAL</p>")
-                    .append("</div>")
+            String sigTag = signatureBase64.isEmpty()
+                    ? ""
+                    : "<img src=\"" + signatureBase64 + "\" class=\"signature-img\">";
 
-                    .append("<div class=\"id-bar\">ID CARD</div>")
-                    .append("<div class=\"student-id\">").append(s.getStudentSystemId()).append("</div>")
-
-                    .append("<div class=\"photo\">")
-                    .append(photoUrl.isEmpty()
-                            ? "<img src=\"https://via.placeholder.com/70x80\" style=\"width:100%;height:100%;object-fit:cover;\">"
-                            : "<img src=\"" + photoUrl + "\" style=\"width:100%;height:100%;object-fit:cover;\">")
-                    .append("</div>")
-
-                    .append("<div class=\"name\">").append(s.getNameEnglish()).append("</div>")
-
-                    .append("<table class=\"info\">")
-                    .append("<tr><td class=\"label\">Class</td><td>: ")
-                    .append(s.getStudentClass() != null ? s.getStudentClass().getName() : "N/A").append("</td></tr>")
-                    .append("<tr><td class=\"label\">Shift</td><td>: ")
-                    .append(s.getShift() != null ? s.getShift().getName() : "N/A").append("</td></tr>");
-
+            // Build info rows
+            StringBuilder infoRows = new StringBuilder();
+            infoRows.append("<tr>")
+                    .append("<td class=\"lbl\">Class</td>")
+                    .append("<td class=\"sep\">:</td>")
+                    .append("<td class=\"val\">").append(s.getStudentClass() != null ? s.getStudentClass().getName() : "N/A").append("</td>")
+                    .append("</tr>");
+            infoRows.append("<tr>")
+                    .append("<td class=\"lbl\">Shift</td>")
+                    .append("<td class=\"sep\">:</td>")
+                    .append("<td class=\"val\">").append(s.getShift() != null ? s.getShift().getName() : "N/A").append("</td>")
+                    .append("</tr>");
             if (s.getGenderSection() != null) {
-                cards.append("<tr><td class=\"label\">Section</td><td>: ")
-                        .append(s.getGenderSection().getGenderName()).append("</td></tr>");
+                infoRows.append("<tr>")
+                        .append("<td class=\"lbl\">Section</td>")
+                        .append("<td class=\"sep\">:</td>")
+                        .append("<td class=\"val\">").append(s.getGenderSection().getGenderName()).append("</td>")
+                        .append("</tr>");
             }
             if (s.getStudentGroup() != null) {
-                cards.append("<tr><td class=\"label\">Group</td><td>: ")
-                        .append(s.getStudentGroup().getName()).append("</td></tr>");
+                infoRows.append("<tr>")
+                        .append("<td class=\"lbl\">Group</td>")
+                        .append("<td class=\"sep\">:</td>")
+                        .append("<td class=\"val\">").append(s.getStudentGroup().getName()).append("</td>")
+                        .append("</tr>");
             }
+            infoRows.append("<tr>")
+                    .append("<td class=\"lbl\">Roll</td>")
+                    .append("<td class=\"sep\">:</td>")
+                    .append("<td class=\"val\">").append(s.getClassRoll() != null ? s.getClassRoll() : "N/A").append("</td>")
+                    .append("</tr>");
+            infoRows.append("<tr>")
+                    .append("<td class=\"lbl\">Year</td>")
+                    .append("<td class=\"sep\">:</td>")
+                    .append("<td class=\"val\">").append(s.getAcademicYear() != null ? s.getAcademicYear().getYearName() : "N/A").append("</td>")
+                    .append("</tr>");
+            infoRows.append("<tr>")
+                    .append("<td class=\"lbl\">Mobile</td>")
+                    .append("<td class=\"sep\">:</td>")
+                    .append("<td class=\"val\">").append(s.getMotherPhone() != null ? s.getMotherPhone() : "N/A").append("</td>")
+                    .append("</tr>");
 
-            cards.append("<tr><td class=\"label\">Roll</td><td>: ")
-                    .append(s.getClassRoll() != null ? s.getClassRoll() : "N/A").append("</td></tr>")
-                    .append("<tr><td class=\"label\">Year</td><td>: ")
-                    .append(s.getAcademicYear() != null ? s.getAcademicYear().getYearName() : "N/A").append("</td></tr>")
-                    .append("<tr><td class=\"label\">Mobile</td><td>: ")
-                    .append(s.getMotherPhone() != null ? s.getMotherPhone() : "N/A").append("</td></tr>")
-                    .append("</table>")
+            cards.append("<div class=\"card\">")
 
-                    .append("<div class=\"signature\">")
-                    .append(signatureBase64.isEmpty() ? "" :
-                            "<img src=\"" + signatureBase64 + "\" class=\"signature-img\">")
-                    .append("<div class=\"signature-line\"></div>")
-                    .append("<div class=\"principal\">PRINCIPAL</div>")
+                    // Top teal strip
+                    .append("<div class=\"card-header\"></div>")
+
+                    // Body — flex column, justify-content: flex-end pushes content to bottom
+                    .append("<div class=\"card-body\">")
+
+                    // Moon arc SVG (absolute, behind content)
+                    .append("<svg class=\"arc-svg\" viewBox=\"0 0 190 95\" preserveAspectRatio=\"none\" height=\"95\" xmlns=\"http://www.w3.org/2000/svg\">")
+                    .append("<path d=\"M0,95 L190,95 L190,24 Q95,88 0,76 Z\" fill=\"#cdeeb7\"/>")
+                    .append("</svg>")
+
+                    // School info
+                    .append("<div class=\"school-info\">")
+                    .append("<div class=\"school-name\">LUTFUR RAHMAN ALIM MADRASAH</div>")
+                    .append("<div class=\"school-address\">LUTFUR RAHMAN ROAD, NATULLABAD, BARISHAL</div>")
                     .append("</div>")
 
-                    .append("<div class=\"bottom\"></div>")
-                    .append("</div>");
+                    // Photo row with yellow badges
+                    .append("<div class=\"photo-row\">")
+                    .append("<div class=\"side-badge left\">ID CARD</div>")
+                    .append("<div class=\"photo-frame\">").append(photoTag).append("</div>")
+                    .append("<div class=\"side-badge right\">").append(s.getStudentSystemId()).append("</div>")
+                    .append("</div>")
+
+                    // Student name
+                    .append("<div class=\"student-name\">").append(s.getNameEnglish()).append("</div>")
+
+                    // Info table
+                    .append("<table class=\"info-table\">").append(infoRows).append("</table>")
+
+                    // Signature
+                    .append("<div class=\"sig-area\">")
+                    .append(sigTag)
+                    .append("<div class=\"sig-line\"></div>")
+                    .append("<div class=\"principal-label\">PRINCIPAL</div>")
+                    .append("</div>")
+
+                    .append("</div>") // end card-body
+
+                    // Bottom teal strip
+                    .append("<div class=\"card-footer\"></div>")
+
+                    .append("</div>"); // end card
         }
 
         return "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><style>"
@@ -286,13 +329,8 @@ public class IdCardService {
                 + "Always carry your card with you.<br>"
                 + "In case of loss, inform issuing authority as if found, please return to below address."
                 + "</div>"
-
                 + "<div class=\"back-logo-center\">" + logoTag + "</div>"
-
-                + "<div class=\"back-school-name\">"
-                + "LUTFUR RAHMAN ALIM MADRASAH"
-                + "</div>"
-
+                + "<div class=\"back-school-name\">LUTFUR RAHMAN ALIM MADRASAH</div>"
                 + "<div class=\"back-info\">"
                 + "<div><span class=\"back-label\">EIIN:</span> 137732</div>"
                 + "<div>LUTFUR RAHMAN ROAD</div>"
@@ -300,7 +338,6 @@ public class IdCardService {
                 + "<div><span class=\"back-label\">Mobile:</span> 01712-951422</div>"
                 + "<div><span class=\"back-label\">Email:</span><br>lutfurrahmanmodelmadrasah2003@gmail.com</div>"
                 + "</div>"
-
                 + "<div class=\"back-footer\">Validity Date : 31-12-2026</div>"
                 + "</div>";
 
@@ -316,27 +353,138 @@ public class IdCardService {
         return "* { box-sizing: border-box; margin: 0; padding: 0; }"
                 + "body { background: #f0f0f0; font-family: Arial, sans-serif; padding: " + PAGE_PAD + "px; }"
                 + ".grid { display: flex; flex-wrap: wrap; gap: " + GAP + "px; }"
-                + ".card { width: " + CARD_W + "px; height: " + CARD_H + "px; background: linear-gradient(#d9ecf7, #ffffff); border: 2px dashed #999; padding: 8px; position: relative; overflow: hidden; }"
-                + ".school { text-align: center; }"
-                + ".school h2 { color: #1d3e8a; font-size: 8px; line-height: 1.2; }"
-                + ".school p  { font-size: 7px; margin-top: 2px; }"
-                + ".id-bar { position: absolute; left: 0; top: 52px; background: #1d5bbf; color: white; padding: 6px 3px; font-weight: bold; font-size: 7px; writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 1px; }"
-                + ".student-id { position: absolute; right: 0; top: 52px; background: #1d5bbf; color: white; padding: 6px 3px; font-weight: bold; font-size: 7px; writing-mode: vertical-rl; letter-spacing: 1px; }"
-                + ".photo { width: 70px; height: 80px; border: 2px solid #4da3d9; margin: 6px auto; overflow: hidden; }"
-                + ".name { text-align: center; color: #7a1fa2; font-weight: bold; font-size: 8px; margin: 4px 0 2px; }"
-                + ".info { width: 100%; }"
-                + ".info td { padding: 1px 2px; font-size: 7.5px; line-height: 1.3; }"
-                + ".label { width: 45px; font-weight: bold; }"
-                + ".signature { position: absolute; bottom: 22px; width: 90%; left: 5%; text-align: right; }"
-                + ".signature-img { display: block; margin-left: auto; margin-right: 0; width: 60px; height: 28px; object-fit: contain; margin-bottom: 0; }"
-                + ".signature-line { border-top: 1px dashed #555; margin-bottom: 2px; }"
-                + ".principal { font-size: 7px; }"
-                + ".bottom { position: absolute; bottom: 0; left: 0; width: 100%; height: 20px; background: linear-gradient(90deg, #2aa4d4, #1d5bbf); }"
+
+                // Card shell — flex column so header/footer are fixed, body flexes
+                + ".card {"
+                + "  width: " + CARD_W + "px;"
+                + "  height: " + CARD_H + "px;"
+                + "  background: #ffffff;"
+                + "  border: 2px dashed #999;"
+                + "  position: relative;"
+                + "  overflow: hidden;"
+                + "  display: flex;"
+                + "  flex-direction: column;"
+                + "}"
+
+                // Top teal strip
+                + ".card-header { background: #2e7d6e; height: 12px; flex-shrink: 0; }"
+
+                // Body — flex column, justify-content flex-end pushes content toward footer
+                + ".card-body {"
+                + "  flex: 1;"
+                + "  background: linear-gradient(to bottom, #b8ddf5 0%, #d4eefb 40%, #eaf6fd 65%, #ffffff 100%);"
+                + "  padding: 5px 7px 0;"
+                + "  position: relative;"
+                + "  overflow: hidden;"
+                + "  display: flex;"
+                + "  flex-direction: column;"
+                + "  justify-content: flex-end;"
+                + "}"
+
+                // Moon arc — absolute, sits at bottom of body
+                + ".arc-svg { position: absolute; bottom: 0; left: 0; width: 100%; pointer-events: none; z-index: 0; }"
+
+                // School info
+                + ".school-info { text-align: center; margin-bottom: 6px; position: relative; z-index: 1; }"
+                + ".school-name { font-size: 8px; font-weight: 900; color: #1a3a8a; line-height: 1.2; }"
+                + ".school-address { font-size: 6.5px; color: #cc1a1a; font-weight: 700; margin-top: 1px; text-transform: uppercase; }"
+
+                // Photo row
+                + ".photo-row {"
+                + "  display: flex;"
+                + "  align-items: center;"
+                + "  justify-content: space-between;"
+                + "  margin-bottom: 6px;"
+                + "  position: relative;"
+                + "  z-index: 1;"
+                + "}"
+
+                // Yellow side badges
+                + ".side-badge {"
+                + "  background: #f5c518;"
+                + "  color: #1a1a1a;"
+                + "  font-size: 6px;"
+                + "  font-weight: 700;"
+                + "  letter-spacing: 1px;"
+                + "  text-transform: uppercase;"
+                + "  writing-mode: vertical-rl;"
+                + "  text-orientation: mixed;"
+                + "  padding: 5px 3px;"
+                + "  border-radius: 3px;"
+                + "  line-height: 1;"
+                + "  flex-shrink: 0;"
+                + "  align-self: center;"
+                + "}"
+                + ".side-badge.left { transform: rotate(180deg); }"
+
+                // Photo frame
+                + ".photo-frame {"
+                + "  width: 62px;"
+                + "  height: 72px;"
+                + "  border: 2px solid #2e7d6e;"
+                + "  border-radius: 3px;"
+                + "  overflow: hidden;"
+                + "  background: #b8d8f0;"
+                + "  display: flex;"
+                + "  align-items: center;"
+                + "  justify-content: center;"
+                + "}"
+                + ".photo-placeholder { font-size: 7px; color: #4a7a9a; text-align: center; line-height: 1.4; }"
+
+                // Student name
+                + ".student-name {"
+                + "  text-align: center;"
+                + "  color: #5b1fa8;"
+                + "  font-weight: 900;"
+                + "  font-size: 9px;"
+                + "  margin: 0 0 5px;"
+                + "  position: relative;"
+                + "  z-index: 1;"
+                + "}"
+
+                // Info table
+                + ".info-table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; }"
+                + ".info-table td { padding: 1.5px 2px; font-size: 7.5px; line-height: 1.3; color: #111; }"
+                + ".info-table td.lbl { font-weight: 700; width: 38px; color: #111; }"
+                + ".info-table td.sep { width: 8px; color: #444; }"
+                + ".info-table td.val { font-weight: 600; color: #111; }"
+                + ".info-table tr:not(:first-child) td { border-top: 1px dashed #cde8d0; }"
+
+                // Signature
+                + ".sig-area {"
+                + "  display: flex;"
+                + "  flex-direction: column;"
+                + "  align-items: flex-end;"
+                + "  margin-top: 5px;"
+                + "  margin-bottom: 4px;"
+                + "  padding-right: 3px;"
+                + "  position: relative;"
+                + "  z-index: 1;"
+                + "}"
+                + ".signature-img { display: block; margin-left: auto; width: 45px; height: 18px; object-fit: contain; }"
+                + ".sig-line { border-top: 1px dashed #555; width: 70px; margin-bottom: 1px; }"
+                + ".principal-label { font-size: 6.5px; font-weight: 700; color: #222; letter-spacing: 1px; }"
+
+                // Bottom teal strip
+                + ".card-footer { background: #2e7d6e; height: 12px; flex-shrink: 0; }"
+
                 + ".page-break { width: 100%; page-break-before: always; break-before: page; }";
     }
 
     private String getBackCss() {
-        return ".card-back { width: " + CARD_W + "px; height: " + CARD_H + "px; background: #ffffff; border: 2px dashed #999; padding: 14px 16px; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; text-align: center; box-sizing: border-box; }"
+        return ".card-back {"
+                + "  width: " + CARD_W + "px;"
+                + "  height: " + CARD_H + "px;"
+                + "  background: #ffffff;"
+                + "  border: 2px dashed #999;"
+                + "  padding: 14px 16px;"
+                + "  position: relative;"
+                + "  overflow: hidden;"
+                + "  display: flex;"
+                + "  flex-direction: column;"
+                + "  align-items: center;"
+                + "  text-align: center;"
+                + "}"
                 + ".back-top-text { font-size: 7px; font-weight: bold; line-height: 1.5; color: #111; margin-bottom: 10px; }"
                 + ".back-logo-center { margin: 6px 0; }"
                 + ".logo-img { width: 50px; height: 50px; object-fit: contain; }"
