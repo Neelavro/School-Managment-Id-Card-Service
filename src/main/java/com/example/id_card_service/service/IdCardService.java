@@ -39,7 +39,7 @@ public class IdCardService {
     @PostConstruct
     public void init() {
         try {
-            InputStream is = getClass().getResourceAsStream("/static/signature.jpeg");
+            InputStream is = getClass().getResourceAsStream("/static/signature.png");
             signatureBase64 = "data:image/jpeg;base64,"
                     + Base64.getEncoder().encodeToString(is.readAllBytes());
         } catch (Exception e) {
@@ -230,6 +230,11 @@ public class IdCardService {
                     .append("<td class=\"val\">").append(s.getStudentClass() != null ? s.getStudentClass().getName() : "N/A").append("</td>")
                     .append("</tr>");
             infoRows.append("<tr>")
+                    .append("<td class=\"lbl\">Roll</td>")
+                    .append("<td class=\"sep\">:</td>")
+                    .append("<td class=\"val\">").append(s.getClassRoll() != null ? s.getClassRoll() : "N/A").append("</td>")
+                    .append("</tr>");
+            infoRows.append("<tr>")
                     .append("<td class=\"lbl\">Shift</td>")
                     .append("<td class=\"sep\">:</td>")
                     .append("<td class=\"val\">").append(s.getShift() != null ? s.getShift().getName() : "N/A").append("</td>")
@@ -248,11 +253,7 @@ public class IdCardService {
                         .append("<td class=\"val\">").append(s.getStudentGroup().getName()).append("</td>")
                         .append("</tr>");
             }
-            infoRows.append("<tr>")
-                    .append("<td class=\"lbl\">Roll</td>")
-                    .append("<td class=\"sep\">:</td>")
-                    .append("<td class=\"val\">").append(s.getClassRoll() != null ? s.getClassRoll() : "N/A").append("</td>")
-                    .append("</tr>");
+
             infoRows.append("<tr>")
                     .append("<td class=\"lbl\">Year</td>")
                     .append("<td class=\"sep\">:</td>")
@@ -386,8 +387,8 @@ public class IdCardService {
 
                 // School info
                 + ".school-info { text-align: center; margin-bottom: 6px; position: relative; z-index: 1; }"
-                + ".school-name { font-size: 8px; font-weight: 900; color: #1a3a8a; line-height: 1.2; }"
-                + ".school-address { font-size: 6.5px; color: #cc1a1a; font-weight: 700; margin-top: 1px; text-transform: uppercase; }"
+                + ".school-name { font-size: 10px; font-weight: 900; color: #1a3a8a; line-height: 1.2; }"
+                + ".school-address { font-size: 6px; color: #cc1a1a; font-weight: 700; margin-top: 1px; text-transform: uppercase; }"
 
                 // Photo row
                 + ".photo-row {"
@@ -461,7 +462,7 @@ public class IdCardService {
                 + "  position: relative;"
                 + "  z-index: 1;"
                 + "}"
-                + ".signature-img { display: block; margin-left: auto; width: 45px; height: 18px; object-fit: contain; }"
+                + ".signature-img { display: block; margin-left: auto; width: 60px; height: 24px; object-fit: contain; }"
                 + ".sig-line { border-top: 1px dashed #555; width: 70px; margin-bottom: 1px; }"
                 + ".principal-label { font-size: 6.5px; font-weight: 700; color: #222; letter-spacing: 1px; }"
 
