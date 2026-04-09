@@ -23,6 +23,7 @@ public class EnrollmentResponseDto {
     private GenderSectionDto genderSection;
     private StudentGroupDto studentGroup;
     private StudentImageDto image;
+    private SectionDto section;
 
     @Getter @Setter
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -65,5 +66,14 @@ public class EnrollmentResponseDto {
         private Long id;
         private String imageUrl;
         private Boolean isActive;
+    }
+    @Getter @Setter
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class SectionDto {
+        private Long id;
+        private String sectionName;
+        private Boolean isActive;
+        private StudentClassDto classEntity;
+        private GenderSectionDto genderSection;
     }
 }

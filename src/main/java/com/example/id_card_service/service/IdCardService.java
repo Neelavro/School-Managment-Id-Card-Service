@@ -222,6 +222,9 @@ public class IdCardService {
                     ? ""
                     : "<img src=\"" + signatureBase64 + "\" class=\"signature-img\">";
 
+            String name = s.getNameEnglish();
+            String nameFontSize = name.length() > 22 ? "7px" : name.length() > 16 ? "8px" : "9px";
+
             // Build info rows
             StringBuilder infoRows = new StringBuilder();
             infoRows.append("<tr>")
@@ -240,10 +243,14 @@ public class IdCardService {
                     .append("<td class=\"val\">").append(s.getShift() != null ? s.getShift().getName() : "N/A").append("</td>")
                     .append("</tr>");
             if (s.getGenderSection() != null) {
+                String sectionLabel = s.getGenderSection().getGenderName();
+                if (s.getSection() != null && s.getSection().getSectionName() != null) {
+                    sectionLabel += " - " + s.getSection().getSectionName();
+                }
                 infoRows.append("<tr>")
                         .append("<td class=\"lbl\">Section</td>")
                         .append("<td class=\"sep\">:</td>")
-                        .append("<td class=\"val\">").append(s.getGenderSection().getGenderName()).append("</td>")
+                        .append("<td class=\"val\">").append(sectionLabel).append("</td>")
                         .append("</tr>");
             }
             if (s.getStudentGroup() != null) {
@@ -292,7 +299,9 @@ public class IdCardService {
                     .append("</div>")
 
                     // Student name
-                    .append("<div class=\"student-name\">").append(s.getNameEnglish()).append("</div>")
+
+                    .append("<div class=\"student-name\" style=\"font-size:" + nameFontSize + ";\">").append(name).append("</div>")
+
 
                     // Info table
                     .append("<table class=\"info-table\">").append(infoRows).append("</table>")
