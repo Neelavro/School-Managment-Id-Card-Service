@@ -300,7 +300,7 @@ public class AdmitCardPdfService {
                 // ── Exam name → session info → ADMIT CARD badge ──
                 + "<div class=\"ac-exam-section\">"
                 + "<div class=\"ac-exam-box\">" + examLabel + "</div>"
-                + "<div class=\"ac-session-info\"+ \"<div style=\\\"height:8px;\\\"></div>\"\n>" + sessionLabel + "</div>"
+                + "<div class=\"ac-session-info\">" + sessionLabel + "</div>"
                 + "<div class=\"ac-admit-badge\">ADMIT CARD</div>"
                 + "</div>"
 
