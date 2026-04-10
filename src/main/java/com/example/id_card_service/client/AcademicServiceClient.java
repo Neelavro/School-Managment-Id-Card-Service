@@ -1,5 +1,6 @@
 package com.example.id_card_service.client;
 
+import com.example.id_card_service.dto.AdmitCardRoutineResponseDto;
 import com.example.id_card_service.dto.EnrollmentResponseDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,16 +17,18 @@ import java.util.List;
 public class AcademicServiceClient {
 
     private static final String BASE_URL = "http://167.172.86.59:8084/api/enrollments";
+//    private static final String BASE_URL = "http://192.168.0.187:8084/api/enrollments";
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
-
     public List<EnrollmentResponseDto> getEnrollments(
             Long academicYearId,
             Long shiftId,
             Long classId,
             Long genderSectionId,
             Long sectionId,
-            Long groupId
+            Long groupId,
+            Integer startRoll,  // ← add
+            Integer endRoll     // ← add
     ) throws Exception {
         StringBuilder url = new StringBuilder(BASE_URL).append("?size=10000");
         if (academicYearId  != null) url.append("&academicYearId=").append(academicYearId);
@@ -34,6 +37,8 @@ public class AcademicServiceClient {
         if (genderSectionId != null) url.append("&genderSectionId=").append(genderSectionId);
         if (sectionId       != null) url.append("&sectionId=").append(sectionId);
         if (groupId         != null) url.append("&groupId=").append(groupId);
+        if (startRoll       != null) url.append("&startRoll=").append(startRoll);  // ← add
+        if (endRoll         != null) url.append("&endRoll=").append(endRoll);      // ← add
 
         System.out.println("Calling enrollment API: " + url);
 
@@ -42,11 +47,12 @@ public class AcademicServiceClient {
                 .GET()
                 .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = httpClient.send(request,
+                HttpResponse.BodyHandlers.ofString());
 
         System.out.println("Response status: " + response.statusCode());
 
-        JsonNode root = objectMapper.readTree(response.body());
+        JsonNode root    = objectMapper.readTree(response.body());
         JsonNode content = root.path("content");
 
         List<EnrollmentResponseDto> list = new ArrayList<>();
@@ -60,5 +66,41 @@ public class AcademicServiceClient {
         }
 
         return list;
+    }
+
+    private static final String ADMIT_CARD_URL = "http://167.172.86.59:8084/api/admit-card";
+//    private static final String ADMIT_CARD_URL = "http://192.168.0.187:8084/api/admit-card";
+
+    public AdmitCardRoutineResponseDto getAdmitCardData(
+            Integer routineId,
+            Integer sessionId,
+            Integer classId,
+            Integer genderSectionId,
+            Long sectionId
+    ) throws Exception {
+        StringBuilder url = new StringBuilder(ADMIT_CARD_URL);
+        url.append("?routineId=").append(routineId);
+        if (sessionId       != null) url.append("&sessionId=").append(sessionId);
+        if (classId         != null) url.append("&classId=").append(classId);
+        if (genderSectionId != null) url.append("&genderSectionId=").append(genderSectionId);
+        if (sectionId       != null) url.append("&sectionId=").append(sectionId);
+
+        System.out.println("Calling admit card API: " + url);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url.toString()))
+                .GET()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request,
+                HttpResponse.BodyHandlers.ofString());
+
+        System.out.println("Response status: " + response.statusCode());
+
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("Admit card API failed: " + response.body());
+        }
+
+        return objectMapper.readValue(response.body(), AdmitCardRoutineResponseDto.class);
     }
 }

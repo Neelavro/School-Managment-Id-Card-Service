@@ -48,7 +48,7 @@ public class IdCardService {
         }
 
         try {
-            InputStream is = getClass().getResourceAsStream("/static/logo.png");
+            InputStream is = getClass().getResourceAsStream("/static/logo-2.png");
             logoBase64 = "data:image/png;base64,"
                     + Base64.getEncoder().encodeToString(is.readAllBytes());
         } catch (Exception e) {
@@ -57,7 +57,7 @@ public class IdCardService {
         }
     }
 
-    private String fetchAndCompressToBase64(String imageUrl) {
+    String fetchAndCompressToBase64(String imageUrl) {
         int MAX_BYTES = 250 * 1024;
 
         try {

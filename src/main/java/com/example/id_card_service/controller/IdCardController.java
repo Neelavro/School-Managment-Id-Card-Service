@@ -36,7 +36,7 @@ public class IdCardController {
     ) throws Exception {
 
         List<EnrollmentResponseDto> enrollments = academicServiceClient.getEnrollments(
-                academicYearId, shiftId, classId, genderSectionId, sectionId, groupId
+                academicYearId, shiftId, classId, genderSectionId, sectionId, groupId, null, null
         );
 
         if (fromRoll != null || toRoll != null) {

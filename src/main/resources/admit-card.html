@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admit Card</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .card {
+            width: 1000px;
+            margin: 20px auto;
+            background: #fff;
+            border: 8px solid #6ec1e4;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            padding: 20px;
+            position: relative;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 4px solid #f4c542;
+            pointer-events: none;
+        }
+
+        .header {
+            text-align: center;
+        }
+
+        .arabic {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .exam-title {
+            display: inline-block;
+            border: 2px solid #6ec1e4;
+            padding: 8px 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .admit {
+            background: #6ec1e4;
+            color: white;
+            display: inline-block;
+            padding: 5px 20px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .info table {
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .info td {
+            padding: 3px 8px;
+        }
+
+        .photo {
+            width: 100px;
+            height: 120px;
+            border: 1px solid #ccc;
+            text-align: center;
+            line-height: 120px;
+            font-size: 12px;
+        }
+
+        .schedule {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .schedule th, .schedule td {
+            border: 1px solid #333;
+            padding: 6px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .schedule th {
+            background: #eee;
+        }
+
+        .tables {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tables table {
+            width: 50%;
+        }
+
+        .footer {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+
+        .signature {
+            text-align: center;
+        }
+
+        .instruction {
+            margin-top: 20px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <div class="header">
+        <div class="arabic">بسم الله الرحمن الرحيم</div>
+        <div class="title">LUTFUR RAHMAN DAKHIL (CADET) MADRASAH</div>
+        <div class="subtitle">LUTFUR RAHMAN ROAD, NATULLABAD, BARISHAL</div>
+
+        <div class="exam-title">ANNUAL EXAMINATION - 2025</div><br>
+        <div class="admit">ADMIT CARD</div>
+    </div>
+
+    <div class="info">
+        <table>
+            <tr><td>Student ID</td><td>:</td><td>20230701</td></tr>
+            <tr><td>Student's Name</td><td>:</td><td><b>MD. MUBASSHIR HOSSAIN SHOWAN</b></td></tr>
+            <tr><td>Class</td><td>:</td><td>HIFZUL QURAN</td></tr>
+            <tr><td>Roll</td><td>:</td><td>20</td></tr>
+        </table>
+
+        <table>
+            <tr><td>Group Name</td><td>:</td><td>N/A</td></tr>
+            <tr><td>Section</td><td>:</td><td>BOY'S</td></tr>
+            <tr><td>Mobile No.</td><td>:</td><td>01718293781</td></tr>
+        </table>
+
+        <div class="photo">PHOTO</div>
+    </div>
+
+    <div class="tables">
+        <table class="schedule">
+            <tr>
+                <th>Exam Date</th>
+                <th>Subject Name</th>
+                <th>Exam Time</th>
+            </tr>
+            <tr><td>2025-12-03</td><td>QURAN MAZID</td><td>07:00 AM - 09:00 AM</td></tr>
+            <tr><td>2025-12-03</td><td>TAZVID</td><td>07:00 AM - 09:00 AM</td></tr>
+            <tr><td>2025-12-04</td><td>DUA</td><td>07:00 AM - 09:00 AM</td></tr>
+            <tr><td>2025-12-04</td><td>MASAEL</td><td>07:00 AM - 09:00 AM</td></tr>
+            <tr><td>2025-12-06</td><td>HADITH SHARIF</td><td>07:00 AM - 09:00 AM</td></tr>
+            <tr><td>2025-12-06</td><td>AMOL-AKHLAQ</td><td>07:00 AM - 09:00 AM</td></tr>
+        </table>
+
+        <table class="schedule">
+            <tr>
+                <th>Exam Date</th>
+                <th>Subject Name</th>
+                <th>Exam Time</th>
+            </tr>
+            <tr><td>2025-12-07</td><td>ENGLISH</td><td>07:00 AM - 10:00 AM</td></tr>
+            <tr><td>2025-12-08</td><td>BANGLA</td><td>07:00 AM - 10:00 AM</td></tr>
+            <tr><td>2025-12-09</td><td>ARABIC 1ST</td><td>07:00 AM - 10:00 AM</td></tr>
+            <tr><td>2025-12-10</td><td>ARABIC 2ND</td><td>07:00 AM - 10:00 AM</td></tr>
+            <tr><td>2025-12-11</td><td>MATHEMATICS</td><td>07:00 AM - 10:00 AM</td></tr>
+        </table>
+    </div>
+
+    <div class="instruction">
+        <b>Instruction:</b>
+        <ol>
+            <li>Examinees must enter into the exam hall at least 15 minutes before the exam starts.</li>
+        </ol>
+    </div>
+
+    <div class="footer">
+        <div class="signature">_________________<br>Class Teacher</div>
+        <div class="signature">_________________<br>Principal</div>
+    </div>
+
+</div>
+
+</body>
+</html>
