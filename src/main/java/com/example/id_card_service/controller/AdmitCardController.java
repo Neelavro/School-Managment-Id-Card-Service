@@ -39,4 +39,29 @@ public class AdmitCardController {
             return ResponseEntity.internalServerError().build();
         }
     }
+    @GetMapping(value = "/by-section", produces = "application/pdf")
+    public ResponseEntity<byte[]> generateAdmitCardsBySection(
+            @RequestParam Integer routineId,
+            @RequestParam(required = false) Integer sessionId,
+            @RequestParam(required = false) Integer classId,
+            @RequestParam(required = false) Integer genderSectionId,
+            @RequestParam(required = false) Long sectionId,
+            @RequestParam(required = false) Integer groupId   // ← add
+    ) {
+        try {
+            byte[] pdf = admitCardPdfService.generateAdmitCardsBySection(
+                    routineId, sessionId, classId, genderSectionId, sectionId, groupId); // ← pass
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"admit-cards-by-section.pdf\"")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(pdf);
+
+        } catch (Exception e) {
+            System.err.println("Controller error: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }

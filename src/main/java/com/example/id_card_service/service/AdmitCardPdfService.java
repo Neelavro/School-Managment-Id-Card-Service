@@ -1,6 +1,7 @@
 package com.example.id_card_service.service;
 
 import com.example.id_card_service.client.AcademicServiceClient;
+import com.example.id_card_service.dto.AdmitCardBySectionRoutineResponseDto;
 import com.example.id_card_service.dto.AdmitCardRoutineResponseDto;
 import com.example.id_card_service.dto.AdmitCardRoutineResponseDto.AllocationDto;
 import com.example.id_card_service.dto.AdmitCardRoutineResponseDto.SessionDto;
@@ -54,6 +55,10 @@ public class AdmitCardPdfService {
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    //  FLOW 1 — Room-based (original)
+    // ═══════════════════════════════════════════════════════════════════════
+
     public byte[] generateAdmitCards(
             Integer routineId,
             Integer sessionId,
@@ -62,7 +67,6 @@ public class AdmitCardPdfService {
             Long sectionId
     ) throws Exception {
         try {
-            // Step 1: Get routine + sessions + allocations + students
             AdmitCardRoutineResponseDto routine = academicServiceClient.getAdmitCardData(
                     routineId, sessionId, classId, genderSectionId, sectionId);
 
@@ -70,7 +74,6 @@ public class AdmitCardPdfService {
             System.out.println("Sessions: " + (routine.getSessions() != null
                     ? routine.getSessions().size() : "NULL"));
 
-            // Step 2: Collect all unique studentSystemIds
             Set<String> allSystemIds = new LinkedHashSet<>();
             for (SessionDto session : routine.getSessions()) {
                 for (AllocationDto alloc : session.getAllocations()) {
@@ -82,7 +85,6 @@ public class AdmitCardPdfService {
             }
             System.out.println("System IDs: " + allSystemIds);
 
-            // Step 3: Fetch full enrollment info
             List<EnrollmentResponseDto> allEnrollments = academicServiceClient.getEnrollments(
                     null, null,
                     classId != null ? classId.longValue() : null,
@@ -104,7 +106,6 @@ public class AdmitCardPdfService {
 
             System.out.println("Enrollment map size: " + enrollmentMap.size());
 
-            // Step 4: Build per-student admit card data
             Map<String, StudentAdmitData> studentDataMap = new LinkedHashMap<>();
             for (SessionDto session : routine.getSessions()) {
                 for (AllocationDto alloc : session.getAllocations()) {
@@ -131,7 +132,6 @@ public class AdmitCardPdfService {
                         + " phone=" + (e != null ? e.getMotherPhone() : "MISSING"));
             });
 
-            // Step 4b: Replace each student's sessions with full class schedule
             for (StudentAdmitData data : studentDataMap.values()) {
                 if (!data.sessions.isEmpty()) {
                     List<SessionDto> fullSchedule =
@@ -143,7 +143,6 @@ public class AdmitCardPdfService {
                 }
             }
 
-            // Step 5: Generate HTML and PDF
             String html = buildHtml(routine, studentDataMap, enrollmentMap);
             System.out.println("HTML length: " + html.length());
 
@@ -171,7 +170,140 @@ public class AdmitCardPdfService {
         }
     }
 
-    // ── Inner data holder ─────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════
+    //  FLOW 2 — By section (no room)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    public byte[] generateAdmitCardsBySection(
+            Integer routineId,
+            Integer sessionId,
+            Integer classId,
+            Integer genderSectionId,
+            Long sectionId,
+            Integer groupId
+    ) throws Exception {
+        try {
+            AdmitCardBySectionRoutineResponseDto routine =
+                    academicServiceClient.getAdmitCardDataBySection(
+                            routineId, sessionId, classId, genderSectionId, sectionId,groupId);
+
+            System.out.println("Routine: " + routine.getTitle());
+
+            Set<String> allSystemIds = new LinkedHashSet<>();
+            for (AdmitCardBySectionRoutineResponseDto.SessionDto session : routine.getSessions()) {
+                for (AdmitCardBySectionRoutineResponseDto.AllocationDto alloc : session.getAllocations()) {
+                    for (AdmitCardBySectionRoutineResponseDto.StudentDto student : alloc.getStudents()) {
+                        if (student.getStudentSystemId() != null)
+                            allSystemIds.add(student.getStudentSystemId());
+                    }
+                }
+            }
+            System.out.println("Total unique students: " + allSystemIds.size());
+
+            List<EnrollmentResponseDto> allEnrollments = academicServiceClient.getEnrollments(
+                    null, null,
+                    classId != null ? classId.longValue() : null,
+                    genderSectionId != null ? genderSectionId.longValue() : null,
+                    sectionId, null, null, null);
+
+            System.out.println("Enrollments fetched: " + allEnrollments.size());
+
+            Map<String, EnrollmentResponseDto> enrollmentMap = allEnrollments.stream()
+                    .filter(e -> e.getStudentSystemId() != null)
+                    .collect(Collectors.toMap(
+                            EnrollmentResponseDto::getStudentSystemId,
+                            e -> e,
+                            (a, b) -> a));
+
+            Map<String, StudentAdmitDataBySection> studentDataMap = new LinkedHashMap<>();
+            for (AdmitCardBySectionRoutineResponseDto.SessionDto session : routine.getSessions()) {
+                for (AdmitCardBySectionRoutineResponseDto.AllocationDto alloc : session.getAllocations()) {
+                    for (AdmitCardBySectionRoutineResponseDto.StudentDto student : alloc.getStudents()) {
+                        String sid = student.getStudentSystemId();
+                        if (sid == null) continue;
+                        studentDataMap.computeIfAbsent(sid, k -> new StudentAdmitDataBySection(
+                                sid,
+                                student.getClassRoll(),
+                                alloc.getSectionName(),
+                                alloc.getGenderSectionName(),
+                                session.getClassName()
+                        )).addSession(session);
+                    }
+                }
+            }
+
+            // Enrich section/genderSection/group from enrollment data since alloc has nulls
+            for (Map.Entry<String, StudentAdmitDataBySection> entry : studentDataMap.entrySet()) {
+                EnrollmentResponseDto e = enrollmentMap.get(entry.getKey());
+                if (e == null) continue;
+                StudentAdmitDataBySection d = entry.getValue();
+                if (d.sectionName == null && e.getSection() != null)
+                    d.sectionName = e.getSection().getSectionName();
+                if (d.genderSectionName == null && e.getGenderSection() != null)
+                    d.genderSectionName = e.getGenderSection().getGenderName();
+                if (d.groupName == null && e.getStudentGroup() != null)
+                    d.groupName = e.getStudentGroup().getName();
+            }
+
+            // After enrichment loop
+            for (StudentAdmitDataBySection data : studentDataMap.values()) {
+                if (!data.sessions.isEmpty()) {
+                    List<AdmitCardBySectionRoutineResponseDto.SessionDto> fullSchedule =
+                            data.sessions.get(0).getFullSchedule();
+                    if (fullSchedule != null && !fullSchedule.isEmpty()) {
+                        // Filter: keep session if groupId is null (shared)
+                        // OR groupId matches this student's group
+                        Integer studentGroupId = getGroupId(data.groupName, enrollmentMap, data.studentSystemId);
+                        data.sessions = fullSchedule.stream()
+                                .filter(s -> s.getGroupId() == null ||
+                                        studentGroupId == null ||
+                                        s.getGroupId().equals(studentGroupId))
+                                .sorted(Comparator.comparing(
+                                        AdmitCardBySectionRoutineResponseDto.SessionDto::getDate))
+                                .collect(Collectors.toList());
+                    }
+                }
+            }
+
+            String html = buildHtmlBySection(routine, studentDataMap, enrollmentMap);
+            System.out.println("HTML length: " + html.length());
+
+            try (Playwright playwright = Playwright.create()) {
+                Browser browser = playwright.chromium().launch(
+                        new BrowserType.LaunchOptions().setHeadless(true));
+                Page page = browser.newPage();
+                page.setContent(html, new Page.SetContentOptions()
+                        .setWaitUntil(WaitUntilState.NETWORKIDLE));
+                byte[] pdf = page.pdf(new Page.PdfOptions()
+                        .setPrintBackground(true)
+                        .setMargin(new Margin().setTop("0").setBottom("0")
+                                .setLeft("0").setRight("0"))
+                        .setWidth(PAGE_W + "px")
+                        .setHeight(PAGE_H + "px"));
+                System.out.println("PDF size: " + pdf.length + " bytes");
+                browser.close();
+                return pdf;
+            }
+
+        } catch (Exception e) {
+            System.err.println("ERROR in generateAdmitCardsBySection: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+    private Integer getGroupId(
+            String groupName,
+            Map<String, EnrollmentResponseDto> enrollmentMap,
+            String studentSystemId
+    ) {
+        EnrollmentResponseDto e = enrollmentMap.get(studentSystemId);
+        if (e == null || e.getStudentGroup() == null) return null;
+        return e.getStudentGroup().getId();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Inner data holders
+    // ═══════════════════════════════════════════════════════════════════════
 
     static class StudentAdmitData {
         String studentSystemId;
@@ -196,7 +328,33 @@ public class AdmitCardPdfService {
         void addSession(SessionDto s) { sessions.add(s); }
     }
 
-    // ── HTML Builder ──────────────────────────────────────────────────────────
+    static class StudentAdmitDataBySection {
+        String studentSystemId;
+        Integer classRoll;
+        String sectionName;
+        String genderSectionName;
+        String groupName;
+        String className;
+        List<AdmitCardBySectionRoutineResponseDto.SessionDto> sessions = new ArrayList<>();
+
+        StudentAdmitDataBySection(String studentSystemId, Integer classRoll,
+                                  String sectionName, String genderSectionName,
+                                  String className) {
+            this.studentSystemId   = studentSystemId;
+            this.classRoll         = classRoll;
+            this.sectionName       = sectionName;
+            this.genderSectionName = genderSectionName;
+            this.className         = className;
+        }
+
+        void addSession(AdmitCardBySectionRoutineResponseDto.SessionDto s) {
+            sessions.add(s);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  HTML builders — Flow 1 (with room)
+    // ═══════════════════════════════════════════════════════════════════════
 
     private String buildHtml(
             AdmitCardRoutineResponseDto routine,
@@ -228,6 +386,8 @@ public class AdmitCardPdfService {
                 + "</body></html>";
     }
 
+    private static final int ROWS_PER_SIDE = 6;
+
     private String buildCard(
             AdmitCardRoutineResponseDto routine,
             StudentAdmitData data,
@@ -244,8 +404,7 @@ public class AdmitCardPdfService {
                 && enrollment.getImage() != null
                 && Boolean.TRUE.equals(enrollment.getImage().getIsActive())
                 && enrollment.getImage().getImageUrl() != null)
-                ? idCardService.fetchAndCompressToBase64(
-                enrollment.getImage().getImageUrl())
+                ? idCardService.fetchAndCompressToBase64(enrollment.getImage().getImageUrl())
                 : "";
 
         String photoTag = photoUrl.isEmpty()
@@ -258,33 +417,32 @@ public class AdmitCardPdfService {
                 : "<img src=\"" + logoBase64
                 + "\" style=\"width:68px;height:68px;object-fit:contain;\">";
 
-        // Section label
+        // Build section display: genderSection [ - section] only if not null
         String sectionLabel = nvl(data.genderSectionName, "");
         if (data.sectionName != null && !data.sectionName.isBlank())
             sectionLabel += (sectionLabel.isEmpty() ? "" : " - ") + data.sectionName;
-        if (sectionLabel.isEmpty()) sectionLabel = "N/A";
 
-        // Full schedule sorted by date
         List<SessionDto> sessions = new ArrayList<>(data.sessions);
         sessions.sort(Comparator.comparing(SessionDto::getDate));
-        int half         = (int) Math.ceil(sessions.size() / 2.0);
-        List<SessionDto> left  = sessions.subList(0, half);
-        List<SessionDto> right = sessions.subList(half, sessions.size());
+        // Equal split always (ceil on left), but left is capped at 8 — overflow goes right.
+        int total     = sessions.size();
+        int leftCount = Math.min((int) Math.ceil(total / 2.0), 8);
+        List<SessionDto> left  = sessions.subList(0, leftCount);
+        List<SessionDto> right = sessions.subList(leftCount, sessions.size());
 
-        // Exam title + academic year
         String examLabel = nvl(routine.getTitle(), "EXAMINATION");
         if (routine.getAcademicYearName() != null
                 && !routine.getAcademicYearName().isBlank())
             examLabel += " — " + routine.getAcademicYearName();
 
-        // Session info line (class | section)
         String sessionLabel = nvl(data.className, "");
-        if (!sectionLabel.equals("N/A"))
+        if (!sectionLabel.isEmpty())
             sessionLabel += (sessionLabel.isEmpty() ? "" : " | ") + sectionLabel;
+        if (groupName != null && !groupName.equals("N/A"))
+            sessionLabel += (sessionLabel.isEmpty() ? "" : " | ") + groupName;
 
         return "<div class=\"admit-card\">"
-
-                // ── Header: logo | school info | photo ──
+                // ── Header ──
                 + "<div class=\"ac-header\">"
                 + "<div class=\"ac-logo\">" + logoTag + "</div>"
                 + "<div class=\"ac-header-center\">"
@@ -294,47 +452,34 @@ public class AdmitCardPdfService {
                 + "</div>"
                 + "<div class=\"ac-photo\">" + photoTag + "</div>"
                 + "</div>"
-
                 + "<hr class=\"ac-divider-line\">"
-
-                // ── Exam name → session info → ADMIT CARD badge ──
+                // ── Exam label ──
                 + "<div class=\"ac-exam-section\">"
                 + "<div class=\"ac-exam-box\">" + examLabel + "</div>"
                 + "<div class=\"ac-session-info\">" + sessionLabel + "</div>"
                 + "<div class=\"ac-admit-badge\">ADMIT CARD</div>"
                 + "</div>"
-
                 + "<hr class=\"ac-divider-line\">"
-
-                // ── Student info ──
+                // ── Student info: left = ID + Name, right = Roll + Phone ──
                 + "<div class=\"ac-info\">"
                 + "<table class=\"info-table\">"
                 + infoRow("Student ID",     data.studentSystemId)
                 + infoRow("Student's Name", "<b>" + name + "</b>")
-                + infoRow("Class",          nvl(data.className, "N/A"))
-                + infoRow("Roll",           data.classRoll != null
-                ? data.classRoll.toString() : "N/A")
                 + "</table>"
                 + "<table class=\"info-table\">"
-                + infoRow("Group",         groupName)
-                + infoRow("Section",       sectionLabel)
+                + infoRow("Roll",          data.classRoll != null ? data.classRoll.toString() : "N/A")
                 + infoRow("Parent Mobile", phone)
                 + "</table>"
                 + "</div>"
-
-                // ── Schedule tables with room column ──
+                // ── Schedule ──
                 + "<div class=\"ac-tables\">"
                 + buildScheduleTable(left,  data.roomName)
                 + buildScheduleTable(right, data.roomName)
                 + "</div>"
-
-                // ── Instruction ──
                 + "<div class=\"ac-instruction\"><b>Instruction:</b>"
                 + "<ol style=\"margin:4px 0 0 16px;padding:0;\">"
                 + "<li>Examinees must enter the exam hall at least 15 minutes before the exam starts.</li>"
                 + "</ol></div>"
-
-                // ── Footer ──
                 + "<div class=\"ac-footer\">"
                 + "<div class=\"sig\">_________________<br>Class Teacher</div>"
                 + (signatureBase64.isEmpty()
@@ -344,7 +489,6 @@ public class AdmitCardPdfService {
                 + "<div style=\"border-top:1px solid #333;padding-top:2px;\">"
                 + "Principal</div></div>")
                 + "</div>"
-
                 + "</div>";
     }
 
@@ -365,6 +509,173 @@ public class AdmitCardPdfService {
                 + rows
                 + "</table>";
     }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  HTML builders — Flow 2 (no room)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    private String buildHtmlBySection(
+            AdmitCardBySectionRoutineResponseDto routine,
+            Map<String, StudentAdmitDataBySection> studentDataMap,
+            Map<String, EnrollmentResponseDto> enrollmentMap
+    ) {
+        List<StudentAdmitDataBySection> students = new ArrayList<>(studentDataMap.values());
+        StringBuilder pages = new StringBuilder();
+
+        for (int i = 0; i < students.size(); i += 2) {
+            StudentAdmitDataBySection s1 = students.get(i);
+            StudentAdmitDataBySection s2 = (i + 1 < students.size())
+                    ? students.get(i + 1) : null;
+
+            EnrollmentResponseDto e1 = enrollmentMap.get(s1.studentSystemId);
+            EnrollmentResponseDto e2 = s2 != null
+                    ? enrollmentMap.get(s2.studentSystemId) : null;
+
+            pages.append("<div class=\"page\">");
+            pages.append(buildCardBySection(routine, s1, e1));
+            pages.append("<div class=\"card-divider\"></div>");
+            if (s2 != null) pages.append(buildCardBySection(routine, s2, e2));
+            pages.append("</div>");
+        }
+
+        return "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><style>"
+                + getCss()
+                + "</style></head><body>"
+                + pages
+                + "</body></html>";
+    }
+
+    private String buildCardBySection(
+            AdmitCardBySectionRoutineResponseDto routine,
+            StudentAdmitDataBySection data,
+            EnrollmentResponseDto enrollment
+    ) {
+        String name      = enrollment != null
+                ? nvl(enrollment.getNameEnglish(), "N/A") : "N/A";
+        String phone     = enrollment != null
+                ? nvl(enrollment.getMotherPhone(), "N/A") : "N/A";
+        // Use groupName enriched from enrollment into data object
+        String groupName = nvl(data.groupName, "N/A");
+
+        String photoUrl = (enrollment != null
+                && enrollment.getImage() != null
+                && Boolean.TRUE.equals(enrollment.getImage().getIsActive())
+                && enrollment.getImage().getImageUrl() != null)
+                ? idCardService.fetchAndCompressToBase64(enrollment.getImage().getImageUrl())
+                : "";
+
+        String photoTag = photoUrl.isEmpty()
+                ? "<div class=\"photo-placeholder\">PHOTO</div>"
+                : "<img src=\"" + photoUrl
+                + "\" style=\"width:100%;height:100%;object-fit:cover;display:block;\">";
+
+        String logoTag = logoBase64.isEmpty()
+                ? "<div style=\"font-size:11px;color:#888;\">LOGO</div>"
+                : "<img src=\"" + logoBase64
+                + "\" style=\"width:68px;height:68px;object-fit:contain;\">";
+
+        String sectionLabel = nvl(data.genderSectionName, "");
+        if (data.sectionName != null && !data.sectionName.isBlank())
+            sectionLabel += (sectionLabel.isEmpty() ? "" : " - ") + data.sectionName;
+
+        List<AdmitCardBySectionRoutineResponseDto.SessionDto> sessions =
+                new ArrayList<>(data.sessions);
+        sessions.sort(Comparator.comparing(
+                AdmitCardBySectionRoutineResponseDto.SessionDto::getDate));
+        int total2     = sessions.size();
+        int leftCount2 = Math.min((int) Math.ceil(total2 / 2.0), 8);
+        var left  = sessions.subList(0, leftCount2);
+        var right = sessions.subList(leftCount2, sessions.size());
+
+        int totalRows2   = sessions.size();
+        String cardScale = totalRows2 > 12
+                ? " transform:scale(0.88);transform-origin:top center;"
+                : totalRows2 > 8 ? " transform:scale(0.94);transform-origin:top center;" : "";
+
+        String examLabel = nvl(routine.getTitle(), "EXAMINATION");
+        if (routine.getAcademicYearName() != null
+                && !routine.getAcademicYearName().isBlank())
+            examLabel += " — " + routine.getAcademicYearName();
+
+        String sessionLabel = nvl(data.className, "");
+        if (!sectionLabel.isEmpty())
+            sessionLabel += (sessionLabel.isEmpty() ? "" : " | ") + sectionLabel;
+        if (groupName != null && !groupName.equals("N/A"))
+            sessionLabel += (sessionLabel.isEmpty() ? "" : " | ") + groupName;
+
+        return "<div class=\"admit-card\" style=\"" + cardScale + "\">"
+                // ── Header ──
+                + "<div class=\"ac-header\">"
+                + "<div class=\"ac-logo\">" + logoTag + "</div>"
+                + "<div class=\"ac-header-center\">"
+                + "<div class=\"ac-arabic\">بسم الله الرحمن الرحيم</div>"
+                + "<div class=\"ac-school\">LUTFUR RAHMAN ALIM MADRASAH</div>"
+                + "<div class=\"ac-address\">LUTFUR RAHMAN ROAD, NATULLABAD, BARISHAL</div>"
+                + "</div>"
+                + "<div class=\"ac-photo\">" + photoTag + "</div>"
+                + "</div>"
+                + "<hr class=\"ac-divider-line\">"
+                // ── Exam label ──
+                + "<div class=\"ac-exam-section\">"
+                + "<div class=\"ac-exam-box\">" + examLabel + "</div>"
+                + "<div class=\"ac-session-info\">" + sessionLabel + "</div>"
+                + "<div class=\"ac-admit-badge\">ADMIT CARD</div>"
+                + "</div>"
+                + "<hr class=\"ac-divider-line\">"
+                // ── Student info: left = ID + Name, right = Roll + Phone ──
+                + "<div class=\"ac-info\">"
+                + "<table class=\"info-table\">"
+                + infoRow("Student ID",     data.studentSystemId)
+                + infoRow("Student's Name", "<b>" + name + "</b>")
+                + "</table>"
+                + "<table class=\"info-table\">"
+                + infoRow("Roll",          data.classRoll != null ? data.classRoll.toString() : "N/A")
+                + infoRow("Parent Mobile", phone)
+                + "</table>"
+                + "</div>"
+                // ── Schedule ──
+                + "<div class=\"ac-tables\">"
+                + buildScheduleTableNoRoom(left)
+                + buildScheduleTableNoRoom(right)
+                + "</div>"
+                + "<div class=\"ac-instruction\"><b>Instruction:</b>"
+                + "<ol style=\"margin:4px 0 0 16px;padding:0;\">"
+                + "<li>Examinees must enter the exam hall at least 15 minutes before the exam starts.</li>"
+                + "</ol></div>"
+                + "<div class=\"ac-footer\">"
+                + "<div class=\"sig\">_________________<br>Class Teacher</div>"
+                + (signatureBase64.isEmpty()
+                ? "<div class=\"sig\">_________________<br>Principal</div>"
+                : "<div class=\"sig\"><img src=\"" + signatureBase64
+                + "\" style=\"height:28px;object-fit:contain;\"><br>"
+                + "<div style=\"border-top:1px solid #333;padding-top:2px;\">"
+                + "Principal</div></div>")
+                + "</div>"
+                + "</div>";
+    }
+
+    private String buildScheduleTableNoRoom(
+            List<AdmitCardBySectionRoutineResponseDto.SessionDto> sessions
+    ) {
+        if (sessions.isEmpty()) return "<table class=\"schedule\"></table>";
+        StringBuilder rows = new StringBuilder();
+        for (AdmitCardBySectionRoutineResponseDto.SessionDto s : sessions) {
+            rows.append("<tr>")
+                    .append("<td>").append(formatDate(s.getDate())).append("</td>")
+                    .append("<td>").append(nvl(s.getSubjectName(), "")).append("</td>")
+                    .append("<td>").append(formatTime(s.getStartTime()))
+                    .append(" - ").append(formatTime(s.getEndTime())).append("</td>")
+                    .append("</tr>");
+        }
+        return "<table class=\"schedule\">"
+                + "<tr><th>Date</th><th>Subject</th><th>Time</th></tr>"
+                + rows
+                + "</table>";
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  Shared helpers
+    // ═══════════════════════════════════════════════════════════════════════
 
     private String infoRow(String label, String value) {
         return "<tr><td class=\"lbl\">" + label + "</td>"
@@ -399,53 +710,68 @@ public class AdmitCardPdfService {
     private String getCss() {
         return "* { box-sizing: border-box; margin: 0; padding: 0; }"
                 + "body { background: #fff; font-family: Arial, sans-serif; }"
-                + ".page { width: 794px; height: 1123px; display: flex;"
-                + "  flex-direction: column; justify-content: space-evenly; padding: 20px; }"
-                + ".card-divider { border-top: 1px dashed #aaa; margin: 0 20px; }"
 
-                + ".admit-card { width: 100%; border: 7px solid #6ec1e4; padding: 16px;"
-                + "  position: relative; background: #fff; }"
+                // Page: A4, 2 cards fill it equally via fixed height
+                + ".page { width: 794px; height: 1123px; display: flex;"
+                + "  flex-direction: column; padding: 16px 20px; gap: 10px; overflow: hidden; }"
+
+                + ".card-divider { display: none; }"
+
+                // Card: fixed height = exactly half page minus padding and gap
+                // (1123 - 32 padding - 10 gap) / 2 = 540px each
+                + ".admit-card { width: 100%; height: 540px; flex-shrink: 0;"
+                + "  border: 7px solid #6ec1e4; padding: 12px 14px;"
+                + "  position: relative; background: #fff;"
+                + "  display: flex; flex-direction: column; overflow: hidden; }"
                 + ".admit-card::before { content:''; position:absolute; top:7px; left:7px;"
                 + "  right:7px; bottom:7px; border:3px solid #f4c542; pointer-events:none; }"
 
-                + ".ac-header { display:flex; align-items:center; gap:12px;"
-                + "  padding-bottom:12px; }"
-                + ".ac-logo { width:68px; height:68px; flex-shrink:0; display:flex;"
+                // Header — fixed size, never grows
+                + ".ac-header { display:flex; align-items:center; gap:10px;"
+                + "  padding-bottom:8px; flex-shrink:0; }"
+                + ".ac-logo { width:64px; height:64px; flex-shrink:0; display:flex;"
                 + "  align-items:center; justify-content:center; }"
                 + ".ac-header-center { flex:1; text-align:center; }"
-                + ".ac-arabic { font-size:14px; margin-bottom:3px; }"
-                + ".ac-school { font-size:17px; font-weight:bold; margin-bottom:2px; }"
-                + ".ac-address { font-size:11px; color:#333; }"
-                + ".ac-photo { width:72px; height:88px; border:1px solid #ccc; flex-shrink:0;"
-                + "  overflow:hidden; display:flex; align-items:center;"
-                + "  justify-content:center; }"
-                + ".photo-placeholder { font-size:11px; color:#888; text-align:center; }"
+                + ".ac-arabic { font-size:13px; margin-bottom:2px; }"
+                + ".ac-school { font-size:16px; font-weight:bold; margin-bottom:2px; }"
+                + ".ac-address { font-size:10px; color:#333; }"
+                + ".ac-photo { width:68px; height:82px; border:1px solid #ccc; flex-shrink:0;"
+                + "  overflow:hidden; display:flex; align-items:center; justify-content:center; }"
+                + ".photo-placeholder { font-size:10px; color:#888; text-align:center; }"
 
-                + ".ac-divider-line { border:none; border-top:1px solid #ccc; margin:0; }"
+                + ".ac-divider-line { border:none; border-top:1px solid #ccc; margin:0; flex-shrink:0; }"
 
-                + ".ac-exam-section { text-align:center; margin:14px 0; }"
+                // Exam badge section — fixed
+                + ".ac-exam-section { text-align:center; margin:8px 0; flex-shrink:0; }"
                 + ".ac-exam-box { display:inline-block; border:2px solid #6ec1e4;"
-                + "  padding:5px 18px; font-weight:bold; font-size:13px; margin-bottom:6px; }"
-                + ".ac-session-info { font-size:12px; color:#444; margin-bottom:8px;"
-                + "  font-weight:600; }"
+                + "  padding:4px 16px; font-weight:bold; font-size:12px; margin-bottom:4px; }"
+                + ".ac-session-info { font-size:11px; color:#444; margin-bottom:6px; font-weight:600; }"
                 + ".ac-admit-badge { display:inline-block; background:#6ec1e4; color:#fff;"
-                + "  font-weight:bold; font-size:12px; padding:4px 28px; }"
+                + "  font-weight:bold; font-size:11px; padding:3px 24px; }"
 
-                + ".ac-info { display:flex; gap:16px; margin:12px 0; }"
-                + ".info-table { border-collapse:collapse; font-size:12px; flex:1; }"
-                + ".info-table td { padding:3px 5px; }"
+                // Info: 2 tables side by side, more breathing room top+bottom
+                + ".ac-info { display:flex; gap:12px; padding:14px 0; flex-shrink:0; }"
+                + ".info-table { border-collapse:collapse; font-size:10px; flex:1; }"
+                + ".info-table td { padding:3px 4px; }"
                 + ".info-table td.lbl { font-weight:bold; white-space:nowrap; }"
-                + ".info-table td.sep { width:8px; }"
+                + ".info-table td.sep { width:6px; }"
 
-                + ".ac-tables { display:flex; gap:8px; margin-top:10px; }"
-                + ".schedule { width:50%; border-collapse:collapse; font-size:11px; }"
-                + ".schedule th, .schedule td { border:1px solid #333; padding:4px 6px;"
-                + "  text-align:center; }"
+                // Schedule: grows to fill remaining card space
+                + ".ac-tables { display:flex; gap:6px; flex:1; min-height:0; margin-top:4px;"
+                + "  align-items:flex-start; }"
+                + ".schedule { width:50%; border-collapse:collapse; font-size:10px;"
+                + "  table-layout:fixed; }"
+                + ".schedule th, .schedule td { border:1px solid #333; padding:3px 4px;"
+                + "  text-align:center; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }"
+                + ".schedule th:nth-child(1), .schedule td:nth-child(1) { width:22%; }"
+                + ".schedule th:nth-child(2), .schedule td:nth-child(2) { width:36%; }"
+                + ".schedule th:nth-child(3), .schedule td:nth-child(3) { width:26%; }"
+                + ".schedule th:nth-child(4), .schedule td:nth-child(4) { width:16%; }"
                 + ".schedule th { background:#eee; }"
 
-                + ".ac-instruction { margin-top:10px; font-size:11px; }"
-                + ".ac-footer { margin-top:16px; display:flex; justify-content:space-between;"
-                + "  font-size:12px; text-align:center; padding:0 20px; }"
+                + ".ac-instruction { margin-top:8px; font-size:10px; flex-shrink:0; }"
+                + ".ac-footer { margin-top:10px; display:flex; justify-content:space-between;"
+                + "  font-size:11px; text-align:center; padding:0 16px; flex-shrink:0; }"
                 + ".sig { text-align:center; }";
     }
 }
