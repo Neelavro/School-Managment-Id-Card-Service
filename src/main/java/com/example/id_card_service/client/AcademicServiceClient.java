@@ -17,8 +17,8 @@ import java.util.List;
 @Component
 public class AcademicServiceClient {
 
-//    private static final String BASE_URL = "http://167.172.86.59:8084/api/enrollments";
-    private static final String BASE_URL = "http://192.168.0.187:8084/api/enrollments";
+    private static final String BASE_URL = "http://167.172.86.59:8084/api/enrollments";
+//    private static final String BASE_URL = "http://192.168.0.187:8084/api/enrollments";
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
     public List<EnrollmentResponseDto> getEnrollments(
@@ -108,8 +108,8 @@ public class AcademicServiceClient {
     //wihtout room , only class, gender section and section
 
     private static final String ADMIT_CARD_BY_SECTION_URL =
-//            "http://167.172.86.59:8084/api/admit-card/by-section";
-  "http://192.168.0.187:8084/api/admit-card/by-section";
+            "http://167.172.86.59:8084/api/admit-card/by-section";
+//  "http://192.168.0.187:8084/api/admit-card/by-section";
 
     public AdmitCardBySectionRoutineResponseDto getAdmitCardDataBySection(
             Integer routineId,
