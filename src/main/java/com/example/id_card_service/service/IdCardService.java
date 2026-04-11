@@ -452,8 +452,8 @@ public class IdCardService {
 
                 // Info table
                 + ".info-table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; }"
-                + ".info-table td { padding: 1.5px 2px; font-size: 10.5px; line-height: 1.3; color: #111; }"
-                + ".info-table td.lbl { font-weight: 700; width: 42px; color: #111; }"
+                + ".info-table td { padding: 1px 2px; font-size: 9.5px; line-height: 1.3; color: #111; }"
+                + ".info-table td.lbl { font-weight: 700; width: 38px; color: #111; }"
                 + ".info-table td.sep { width: 8px; color: #444; }"
                 + ".info-table td.val { font-weight: 600; color: #111; }"
                 + ".info-table tr:not(:first-child) td { border-top: 1px dashed #cde8d0; }"
