@@ -204,7 +204,9 @@ public class AdmitCardPdfService {
                     null, null,
                     classId != null ? classId.longValue() : null,
                     genderSectionId != null ? genderSectionId.longValue() : null,
-                    sectionId, null, null, null);
+                    sectionId,
+                    groupId != null ? groupId.longValue() : null,  // ← was null
+                    null, null);
 
             System.out.println("Enrollments fetched: " + allEnrollments.size());
 
