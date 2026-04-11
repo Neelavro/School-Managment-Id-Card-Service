@@ -224,7 +224,7 @@ public class IdCardService {
 
             String name = s.getNameEnglish();
             // Kept original logic, bumped each tier up by ~1-2px
-            String nameFontSize = name.length() > 22 ? "10px" : name.length() > 16 ? "11px" : "12px";
+            String nameFontSize = name.length() > 28 ? "7.5px" : name.length() > 22 ? "8.5px" : name.length() > 16 ? "10px" : "12px";
 
             // Build info rows
             StringBuilder infoRows = new StringBuilder();
