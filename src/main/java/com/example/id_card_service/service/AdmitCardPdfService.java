@@ -92,10 +92,6 @@ public class AdmitCardPdfService {
                     sectionId, null, null, null);
 
             System.out.println("Enrollments fetched: " + allEnrollments.size());
-            allEnrollments.forEach(e -> System.out.println(
-                    "  systemId=" + e.getStudentSystemId()
-                            + " name=" + e.getNameEnglish()
-                            + " phone=" + e.getMotherPhone()));
 
             Map<String, EnrollmentResponseDto> enrollmentMap = allEnrollments.stream()
                     .filter(e -> e.getStudentSystemId() != null)
@@ -125,12 +121,6 @@ public class AdmitCardPdfService {
             }
 
             System.out.println("Student data map size: " + studentDataMap.size());
-            studentDataMap.forEach((k, v) -> {
-                EnrollmentResponseDto e = enrollmentMap.get(k);
-                System.out.println("  " + k + " -> found=" + (e != null)
-                        + " name=" + (e != null ? e.getNameEnglish() : "MISSING")
-                        + " phone=" + (e != null ? e.getMotherPhone() : "MISSING"));
-            });
 
             for (StudentAdmitData data : studentDataMap.values()) {
                 if (!data.sessions.isEmpty()) {
@@ -185,7 +175,7 @@ public class AdmitCardPdfService {
         try {
             AdmitCardBySectionRoutineResponseDto routine =
                     academicServiceClient.getAdmitCardDataBySection(
-                            routineId, sessionId, classId, genderSectionId, sectionId,groupId);
+                            routineId, sessionId, classId, genderSectionId, sectionId, groupId);
 
             System.out.println("Routine: " + routine.getTitle());
 
@@ -205,7 +195,7 @@ public class AdmitCardPdfService {
                     classId != null ? classId.longValue() : null,
                     genderSectionId != null ? genderSectionId.longValue() : null,
                     sectionId,
-                    groupId != null ? groupId.longValue() : null,  // ← was null
+                    groupId != null ? groupId.longValue() : null,
                     null, null);
 
             System.out.println("Enrollments fetched: " + allEnrollments.size());
@@ -234,7 +224,7 @@ public class AdmitCardPdfService {
                 }
             }
 
-            // Enrich section/genderSection/group from enrollment data since alloc has nulls
+            // Enrich section/genderSection/group from enrollment data
             for (Map.Entry<String, StudentAdmitDataBySection> entry : studentDataMap.entrySet()) {
                 EnrollmentResponseDto e = enrollmentMap.get(entry.getKey());
                 if (e == null) continue;
@@ -247,14 +237,11 @@ public class AdmitCardPdfService {
                     d.groupName = e.getStudentGroup().getName();
             }
 
-            // After enrichment loop
             for (StudentAdmitDataBySection data : studentDataMap.values()) {
                 if (!data.sessions.isEmpty()) {
                     List<AdmitCardBySectionRoutineResponseDto.SessionDto> fullSchedule =
                             data.sessions.get(0).getFullSchedule();
                     if (fullSchedule != null && !fullSchedule.isEmpty()) {
-                        // Filter: keep session if groupId is null (shared)
-                        // OR groupId matches this student's group
                         Integer studentGroupId = getGroupId(data.groupName, enrollmentMap, data.studentSystemId);
                         data.sessions = fullSchedule.stream()
                                 .filter(s -> s.getGroupId() == null ||
@@ -293,6 +280,7 @@ public class AdmitCardPdfService {
             throw e;
         }
     }
+
     private Integer getGroupId(
             String groupName,
             Map<String, EnrollmentResponseDto> enrollmentMap,
@@ -388,8 +376,6 @@ public class AdmitCardPdfService {
                 + "</body></html>";
     }
 
-    private static final int ROWS_PER_SIDE = 6;
-
     private String buildCard(
             AdmitCardRoutineResponseDto routine,
             StudentAdmitData data,
@@ -419,14 +405,12 @@ public class AdmitCardPdfService {
                 : "<img src=\"" + logoBase64
                 + "\" style=\"width:68px;height:68px;object-fit:contain;\">";
 
-        // Build section display: genderSection [ - section] only if not null
         String sectionLabel = nvl(data.genderSectionName, "");
         if (data.sectionName != null && !data.sectionName.isBlank())
             sectionLabel += (sectionLabel.isEmpty() ? "" : " - ") + data.sectionName;
 
         List<SessionDto> sessions = new ArrayList<>(data.sessions);
         sessions.sort(Comparator.comparing(SessionDto::getDate));
-        // Equal split always (ceil on left), but left is capped at 8 — overflow goes right.
         int total     = sessions.size();
         int leftCount = Math.min((int) Math.ceil(total / 2.0), 8);
         List<SessionDto> left  = sessions.subList(0, leftCount);
@@ -462,7 +446,7 @@ public class AdmitCardPdfService {
                 + "<div class=\"ac-admit-badge\">ADMIT CARD</div>"
                 + "</div>"
                 + "<hr class=\"ac-divider-line\">"
-                // ── Student info: left = ID + Name, right = Roll + Phone ──
+                // ── Student info ──
                 + "<div class=\"ac-info\">"
                 + "<table class=\"info-table\">"
                 + infoRow("Student ID",     data.studentSystemId)
@@ -478,6 +462,8 @@ public class AdmitCardPdfService {
                 + buildScheduleTable(left,  data.roomName)
                 + buildScheduleTable(right, data.roomName)
                 + "</div>"
+                // ── Instruction + Footer pinned together at bottom ──
+                + "<div class=\"ac-bottom\">"
                 + "<div class=\"ac-instruction\"><b>Instruction:</b>"
                 + "<ol style=\"margin:4px 0 0 16px;padding:0;\">"
                 + "<li>Examinees must enter the exam hall at least 15 minutes before the exam starts.</li>"
@@ -490,6 +476,7 @@ public class AdmitCardPdfService {
                 + "\" style=\"height:28px;object-fit:contain;\"><br>"
                 + "<div style=\"border-top:1px solid #333;padding-top:2px;\">"
                 + "Principal</div></div>")
+                + "</div>"
                 + "</div>"
                 + "</div>";
     }
@@ -556,7 +543,6 @@ public class AdmitCardPdfService {
                 ? nvl(enrollment.getNameEnglish(), "N/A") : "N/A";
         String phone     = enrollment != null
                 ? nvl(enrollment.getMotherPhone(), "N/A") : "N/A";
-        // Use groupName enriched from enrollment into data object
         String groupName = nvl(data.groupName, "N/A");
 
         String photoUrl = (enrollment != null
@@ -624,7 +610,7 @@ public class AdmitCardPdfService {
                 + "<div class=\"ac-admit-badge\">ADMIT CARD</div>"
                 + "</div>"
                 + "<hr class=\"ac-divider-line\">"
-                // ── Student info: left = ID + Name, right = Roll + Phone ──
+                // ── Student info ──
                 + "<div class=\"ac-info\">"
                 + "<table class=\"info-table\">"
                 + infoRow("Student ID",     data.studentSystemId)
@@ -640,6 +626,8 @@ public class AdmitCardPdfService {
                 + buildScheduleTableNoRoom(left)
                 + buildScheduleTableNoRoom(right)
                 + "</div>"
+                // ── Instruction + Footer pinned together at bottom ──
+                + "<div class=\"ac-bottom\">"
                 + "<div class=\"ac-instruction\"><b>Instruction:</b>"
                 + "<ol style=\"margin:4px 0 0 16px;padding:0;\">"
                 + "<li>Examinees must enter the exam hall at least 15 minutes before the exam starts.</li>"
@@ -652,6 +640,7 @@ public class AdmitCardPdfService {
                 + "\" style=\"height:28px;object-fit:contain;\"><br>"
                 + "<div style=\"border-top:1px solid #333;padding-top:2px;\">"
                 + "Principal</div></div>")
+                + "</div>"
                 + "</div>"
                 + "</div>";
     }
@@ -728,7 +717,7 @@ public class AdmitCardPdfService {
                 + ".admit-card::before { content:''; position:absolute; top:7px; left:7px;"
                 + "  right:7px; bottom:7px; border:3px solid #f4c542; pointer-events:none; }"
 
-                // Header — fixed size, never grows
+                // Header
                 + ".ac-header { display:flex; align-items:center; gap:10px;"
                 + "  padding-bottom:8px; flex-shrink:0; }"
                 + ".ac-logo { width:64px; height:64px; flex-shrink:0; display:flex;"
@@ -743,7 +732,7 @@ public class AdmitCardPdfService {
 
                 + ".ac-divider-line { border:none; border-top:1px solid #ccc; margin:0; flex-shrink:0; }"
 
-                // Exam badge section — fixed
+                // Exam badge section
                 + ".ac-exam-section { text-align:center; margin:8px 0; flex-shrink:0; }"
                 + ".ac-exam-box { display:inline-block; border:2px solid #6ec1e4;"
                 + "  padding:4px 16px; font-weight:bold; font-size:12px; margin-bottom:4px; }"
@@ -751,29 +740,32 @@ public class AdmitCardPdfService {
                 + ".ac-admit-badge { display:inline-block; background:#6ec1e4; color:#fff;"
                 + "  font-weight:bold; font-size:11px; padding:3px 24px; }"
 
-                // Info: 2 tables side by side, more breathing room top+bottom
+                // Info
                 + ".ac-info { display:flex; gap:12px; padding:14px 0; flex-shrink:0; }"
                 + ".info-table { border-collapse:collapse; font-size:10px; flex:1; }"
                 + ".info-table td { padding:3px 4px; }"
                 + ".info-table td.lbl { font-weight:bold; white-space:nowrap; }"
                 + ".info-table td.sep { width:6px; }"
 
-                // Schedule: grows to fill remaining card space
+                // Schedule: flex:1 so it fills remaining space above the bottom block
                 + ".ac-tables { display:flex; gap:6px; flex:1; min-height:0; margin-top:4px;"
                 + "  align-items:flex-start; }"
-                + ".schedule { width:50%; border-collapse:collapse; font-size:10px;"
+                + ".schedule { width:50%; border-collapse:collapse; font-size:9px;"
                 + "  table-layout:fixed; }"
                 + ".schedule th, .schedule td { border:1px solid #333; padding:3px 4px;"
                 + "  text-align:center; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }"
-                + ".schedule th:nth-child(1), .schedule td:nth-child(1) { width:22%; }"
-                + ".schedule th:nth-child(2), .schedule td:nth-child(2) { width:36%; }"
-                + ".schedule th:nth-child(3), .schedule td:nth-child(3) { width:26%; }"
+                // ── with room: Date 20%, Subject 31%, Time 33%, Room 16% ──
+                + ".schedule th:nth-child(1), .schedule td:nth-child(1) { width:20%; }"
+                + ".schedule th:nth-child(2), .schedule td:nth-child(2) { width:31%; }"
+                + ".schedule th:nth-child(3), .schedule td:nth-child(3) { width:33%; }"
                 + ".schedule th:nth-child(4), .schedule td:nth-child(4) { width:16%; }"
                 + ".schedule th { background:#eee; }"
 
-                + ".ac-instruction { margin-top:8px; font-size:10px; flex-shrink:0; }"
-                + ".ac-footer { margin-top:10px; display:flex; justify-content:space-between;"
-                + "  font-size:11px; text-align:center; padding:0 16px; flex-shrink:0; }"
+                // Bottom block: instruction + footer pinned to bottom via margin-top:auto
+                + ".ac-bottom { margin-top:auto; flex-shrink:0; }"
+                + ".ac-instruction { font-size:10px; margin-bottom:10px; }"
+                + ".ac-footer { display:flex; justify-content:space-between; align-items:flex-end;"
+                + "  font-size:11px; text-align:center; padding:0 16px; }"
                 + ".sig { text-align:center; }";
     }
 }

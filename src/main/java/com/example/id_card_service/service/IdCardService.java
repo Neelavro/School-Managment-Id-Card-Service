@@ -223,7 +223,8 @@ public class IdCardService {
                     : "<img src=\"" + signatureBase64 + "\" class=\"signature-img\">";
 
             String name = s.getNameEnglish();
-            String nameFontSize = name.length() > 22 ? "7px" : name.length() > 16 ? "8px" : "9px";
+            // Kept original logic, bumped each tier up by ~1-2px
+            String nameFontSize = name.length() > 22 ? "10px" : name.length() > 16 ? "11px" : "12px";
 
             // Build info rows
             StringBuilder infoRows = new StringBuilder();
@@ -274,16 +275,16 @@ public class IdCardService {
 
             cards.append("<div class=\"card\">")
 
-                    // Top teal strip
-                    .append("<div class=\"card-header\"></div>")
-
-                    // Body — flex column, justify-content: flex-end pushes content to bottom
-                    .append("<div class=\"card-body\">")
-
-                    // Moon arc SVG (absolute, behind content)
+                    // Moon arc SVG — absolute to .card, always pinned to card bottom
                     .append("<svg class=\"arc-svg\" viewBox=\"0 0 190 95\" preserveAspectRatio=\"none\" height=\"95\" xmlns=\"http://www.w3.org/2000/svg\">")
                     .append("<path d=\"M0,95 L190,95 L190,24 Q95,88 0,76 Z\" fill=\"#cdeeb7\"/>")
                     .append("</svg>")
+
+                    // Top teal strip
+                    .append("<div class=\"card-header\"></div>")
+
+                    // Body — flex column
+                    .append("<div class=\"card-body\">")
 
                     // School info
                     .append("<div class=\"school-info\">")
@@ -299,9 +300,7 @@ public class IdCardService {
                     .append("</div>")
 
                     // Student name
-
                     .append("<div class=\"student-name\" style=\"font-size:" + nameFontSize + ";\">").append(name).append("</div>")
-
 
                     // Info table
                     .append("<table class=\"info-table\">").append(infoRows).append("</table>")
@@ -385,19 +384,17 @@ public class IdCardService {
                 + "  background: linear-gradient(to bottom, #b8ddf5 0%, #d4eefb 40%, #eaf6fd 65%, #ffffff 100%);"
                 + "  padding: 5px 7px 0;"
                 + "  position: relative;"
-                + "  overflow: hidden;"
                 + "  display: flex;"
                 + "  flex-direction: column;"
-                + "  justify-content: flex-end;"
                 + "}"
 
                 // Moon arc — absolute, sits at bottom of body
-                + ".arc-svg { position: absolute; bottom: 0; left: 0; width: 100%; pointer-events: none; z-index: 0; }"
+                + ".arc-svg { position: absolute; bottom: 12px; left: 0; width: 100%; pointer-events: none; z-index: 1; }"
 
                 // School info
                 + ".school-info { text-align: center; margin-bottom: 6px; position: relative; z-index: 1; }"
-                + ".school-name { font-size: 10px; font-weight: 900; color: #1a3a8a; line-height: 1.2; }"
-                + ".school-address { font-size: 6px; color: #cc1a1a; font-weight: 700; margin-top: 1px; text-transform: uppercase; }"
+                + ".school-name { font-size: 14px; font-weight: 900; color: #1a3a8a; line-height: 1.2; }"
+                + ".school-address { font-size: 8px; color: #cc1a1a; font-weight: 700; margin-top: 1px; text-transform: uppercase; white-space: nowrap; letter-spacing: -0.5px; word-spacing: -1.5px; }"
 
                 // Photo row
                 + ".photo-row {"
@@ -413,7 +410,7 @@ public class IdCardService {
                 + ".side-badge {"
                 + "  background: #f5c518;"
                 + "  color: #1a1a1a;"
-                + "  font-size: 6px;"
+                + "  font-size: 9px;"
                 + "  font-weight: 700;"
                 + "  letter-spacing: 1px;"
                 + "  text-transform: uppercase;"
@@ -439,14 +436,14 @@ public class IdCardService {
                 + "  align-items: center;"
                 + "  justify-content: center;"
                 + "}"
-                + ".photo-placeholder { font-size: 7px; color: #4a7a9a; text-align: center; line-height: 1.4; }"
+                + ".photo-placeholder { font-size: 10px; color: #4a7a9a; text-align: center; line-height: 1.4; }"
 
-                // Student name
+                // Student name — base controlled inline per card; tiers set in buildHtml
                 + ".student-name {"
                 + "  text-align: center;"
                 + "  color: #5b1fa8;"
                 + "  font-weight: 900;"
-                + "  font-size: 9px;"
+                + "  font-size: 12px;"
                 + "  margin: 0 0 5px;"
                 + "  position: relative;"
                 + "  z-index: 1;"
@@ -454,8 +451,8 @@ public class IdCardService {
 
                 // Info table
                 + ".info-table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; }"
-                + ".info-table td { padding: 1.5px 2px; font-size: 7.5px; line-height: 1.3; color: #111; }"
-                + ".info-table td.lbl { font-weight: 700; width: 38px; color: #111; }"
+                + ".info-table td { padding: 1.5px 2px; font-size: 10.5px; line-height: 1.3; color: #111; }"
+                + ".info-table td.lbl { font-weight: 700; width: 42px; color: #111; }"
                 + ".info-table td.sep { width: 8px; color: #444; }"
                 + ".info-table td.val { font-weight: 600; color: #111; }"
                 + ".info-table tr:not(:first-child) td { border-top: 1px dashed #cde8d0; }"
@@ -473,7 +470,7 @@ public class IdCardService {
                 + "}"
                 + ".signature-img { display: block; margin-left: auto; width: 60px; height: 24px; object-fit: contain; }"
                 + ".sig-line { border-top: 1px dashed #555; width: 70px; margin-bottom: 1px; }"
-                + ".principal-label { font-size: 6.5px; font-weight: 700; color: #222; letter-spacing: 1px; }"
+                + ".principal-label { font-size: 9.5px; font-weight: 700; color: #222; letter-spacing: 1px; }"
 
                 // Bottom teal strip
                 + ".card-footer { background: #2e7d6e; height: 12px; flex-shrink: 0; }"
