@@ -401,7 +401,7 @@ public class AdmitCardPdfService {
                 + "\" style=\"width:100%;height:100%;object-fit:cover;display:block;\">";
 
         String logoTag = logoBase64.isEmpty()
-                ? "<div style=\"font-size:11px;color:#888;\">LOGO</div>"
+                ? "<div style=\"font-size:12px;color:#888;\">LOGO</div>"
                 : "<img src=\"" + logoBase64
                 + "\" style=\"width:68px;height:68px;object-fit:contain;\">";
 
@@ -412,7 +412,7 @@ public class AdmitCardPdfService {
         List<SessionDto> sessions = new ArrayList<>(data.sessions);
         sessions.sort(Comparator.comparing(SessionDto::getDate));
         int total     = sessions.size();
-        int leftCount = Math.min((int) Math.ceil(total / 2.0), 8);
+        int leftCount = Math.min((int) Math.ceil(total / 2.0), 10);
         List<SessionDto> left  = sessions.subList(0, leftCount);
         List<SessionDto> right = sessions.subList(leftCount, sessions.size());
 
@@ -462,13 +462,14 @@ public class AdmitCardPdfService {
                 + buildScheduleTable(left,  data.roomName)
                 + buildScheduleTable(right, data.roomName)
                 + "</div>"
-                // ── Instruction + Footer pinned together at bottom ──
+                // ── Footer: instruction on left, both signatures on right ──
                 + "<div class=\"ac-bottom\">"
+                + "<div class=\"ac-footer\">"
                 + "<div class=\"ac-instruction\"><b>Instruction:</b>"
                 + "<ol style=\"margin:4px 0 0 16px;padding:0;\">"
                 + "<li>Examinees must enter the exam hall at least 15 minutes before the exam starts.</li>"
                 + "</ol></div>"
-                + "<div class=\"ac-footer\">"
+                + "<div class=\"sig-group\">"
                 + "<div class=\"sig\">_________________<br>Class Teacher</div>"
                 + (signatureBase64.isEmpty()
                 ? "<div class=\"sig\">_________________<br>Principal</div>"
@@ -476,6 +477,7 @@ public class AdmitCardPdfService {
                 + "\" style=\"height:28px;object-fit:contain;\"><br>"
                 + "<div style=\"border-top:1px solid #333;padding-top:2px;\">"
                 + "Principal</div></div>")
+                + "</div>"
                 + "</div>"
                 + "</div>"
                 + "</div>";
@@ -558,7 +560,7 @@ public class AdmitCardPdfService {
                 + "\" style=\"width:100%;height:100%;object-fit:cover;display:block;\">";
 
         String logoTag = logoBase64.isEmpty()
-                ? "<div style=\"font-size:11px;color:#888;\">LOGO</div>"
+                ? "<div style=\"font-size:12px;color:#888;\">LOGO</div>"
                 : "<img src=\"" + logoBase64
                 + "\" style=\"width:68px;height:68px;object-fit:contain;\">";
 
@@ -571,14 +573,9 @@ public class AdmitCardPdfService {
         sessions.sort(Comparator.comparing(
                 AdmitCardBySectionRoutineResponseDto.SessionDto::getDate));
         int total2     = sessions.size();
-        int leftCount2 = Math.min((int) Math.ceil(total2 / 2.0), 8);
+        int leftCount2 = Math.min((int) Math.ceil(total2 / 2.0), 10);
         var left  = sessions.subList(0, leftCount2);
         var right = sessions.subList(leftCount2, sessions.size());
-
-        int totalRows2   = sessions.size();
-        String cardScale = totalRows2 > 12
-                ? " transform:scale(0.88);transform-origin:top center;"
-                : totalRows2 > 8 ? " transform:scale(0.94);transform-origin:top center;" : "";
 
         String examLabel = nvl(routine.getTitle(), "EXAMINATION");
         if (routine.getAcademicYearName() != null
@@ -591,7 +588,7 @@ public class AdmitCardPdfService {
         if (groupName != null && !groupName.equals("N/A"))
             sessionLabel += (sessionLabel.isEmpty() ? "" : " | ") + groupName;
 
-        return "<div class=\"admit-card\" style=\"" + cardScale + "\">"
+        return "<div class=\"admit-card\">"
                 // ── Header ──
                 + "<div class=\"ac-header\">"
                 + "<div class=\"ac-logo\">" + logoTag + "</div>"
@@ -626,13 +623,14 @@ public class AdmitCardPdfService {
                 + buildScheduleTableNoRoom(left)
                 + buildScheduleTableNoRoom(right)
                 + "</div>"
-                // ── Instruction + Footer pinned together at bottom ──
+                // ── Footer: instruction on left, both signatures on right ──
                 + "<div class=\"ac-bottom\">"
+                + "<div class=\"ac-footer\">"
                 + "<div class=\"ac-instruction\"><b>Instruction:</b>"
                 + "<ol style=\"margin:4px 0 0 16px;padding:0;\">"
                 + "<li>Examinees must enter the exam hall at least 15 minutes before the exam starts.</li>"
                 + "</ol></div>"
-                + "<div class=\"ac-footer\">"
+                + "<div class=\"sig-group\">"
                 + "<div class=\"sig\">_________________<br>Class Teacher</div>"
                 + (signatureBase64.isEmpty()
                 ? "<div class=\"sig\">_________________<br>Principal</div>"
@@ -640,6 +638,7 @@ public class AdmitCardPdfService {
                 + "\" style=\"height:28px;object-fit:contain;\"><br>"
                 + "<div style=\"border-top:1px solid #333;padding-top:2px;\">"
                 + "Principal</div></div>")
+                + "</div>"
                 + "</div>"
                 + "</div>"
                 + "</div>";
@@ -723,26 +722,26 @@ public class AdmitCardPdfService {
                 + ".ac-logo { width:64px; height:64px; flex-shrink:0; display:flex;"
                 + "  align-items:center; justify-content:center; }"
                 + ".ac-header-center { flex:1; text-align:center; }"
-                + ".ac-arabic { font-size:13px; margin-bottom:2px; }"
-                + ".ac-school { font-size:16px; font-weight:bold; margin-bottom:2px; }"
-                + ".ac-address { font-size:10px; color:#333; }"
+                + ".ac-arabic { font-size:15px; margin-bottom:2px; }"
+                + ".ac-school { font-size:18px; font-weight:bold; margin-bottom:2px; }"
+                + ".ac-address { font-size:12px; color:#333; }"
                 + ".ac-photo { width:68px; height:82px; border:1px solid #ccc; flex-shrink:0;"
                 + "  overflow:hidden; display:flex; align-items:center; justify-content:center; }"
-                + ".photo-placeholder { font-size:10px; color:#888; text-align:center; }"
+                + ".photo-placeholder { font-size:11px; color:#888; text-align:center; }"
 
                 + ".ac-divider-line { border:none; border-top:1px solid #ccc; margin:0; flex-shrink:0; }"
 
                 // Exam badge section
                 + ".ac-exam-section { text-align:center; margin:8px 0; flex-shrink:0; }"
                 + ".ac-exam-box { display:inline-block; border:2px solid #6ec1e4;"
-                + "  padding:4px 16px; font-weight:bold; font-size:12px; margin-bottom:4px; }"
-                + ".ac-session-info { font-size:11px; color:#444; margin-bottom:6px; font-weight:600; }"
+                + "  padding:4px 16px; font-weight:bold; font-size:14px; margin-bottom:4px; }"
+                + ".ac-session-info { font-size:13px; color:#444; margin-bottom:6px; font-weight:600; }"
                 + ".ac-admit-badge { display:inline-block; background:#6ec1e4; color:#fff;"
-                + "  font-weight:bold; font-size:11px; padding:3px 24px; }"
+                + "  font-weight:bold; font-size:13px; padding:3px 24px; }"
 
                 // Info
                 + ".ac-info { display:flex; gap:12px; padding:14px 0; flex-shrink:0; }"
-                + ".info-table { border-collapse:collapse; font-size:10px; flex:1; }"
+                + ".info-table { border-collapse:collapse; font-size:12px; flex:1; }"
                 + ".info-table td { padding:3px 4px; }"
                 + ".info-table td.lbl { font-weight:bold; white-space:nowrap; }"
                 + ".info-table td.sep { width:6px; }"
@@ -750,7 +749,7 @@ public class AdmitCardPdfService {
                 // Schedule: flex:1 so it fills remaining space above the bottom block
                 + ".ac-tables { display:flex; gap:6px; flex:1; min-height:0; margin-top:4px;"
                 + "  align-items:flex-start; }"
-                + ".schedule { width:50%; border-collapse:collapse; font-size:9px;"
+                + ".schedule { width:50%; border-collapse:collapse; font-size:10px;"
                 + "  table-layout:fixed; }"
                 + ".schedule th, .schedule td { border:1px solid #333; padding:3px 4px;"
                 + "  text-align:center; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }"
@@ -761,11 +760,12 @@ public class AdmitCardPdfService {
                 + ".schedule th:nth-child(4), .schedule td:nth-child(4) { width:16%; }"
                 + ".schedule th { background:#eee; }"
 
-                // Bottom block: instruction + footer pinned to bottom via margin-top:auto
+                // Bottom block: instruction left + signatures right, pinned to bottom
                 + ".ac-bottom { margin-top:auto; flex-shrink:0; }"
-                + ".ac-instruction { font-size:10px; margin-bottom:10px; }"
                 + ".ac-footer { display:flex; justify-content:space-between; align-items:flex-end;"
-                + "  font-size:11px; text-align:center; padding:0 16px; }"
-                + ".sig { text-align:center; }";
+                + "  font-size:13px; padding:0 4px; gap:12px; }"
+                + ".ac-instruction { font-size:12px; flex:1; }"
+                + ".sig-group { display:flex; gap:24px; align-items:flex-end; flex-shrink:0; }"
+                + ".sig { text-align:center; font-size:12px; }";
     }
 }
