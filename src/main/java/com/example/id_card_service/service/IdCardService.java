@@ -360,7 +360,7 @@ public class IdCardService {
 
     private String getCss() {
         return "* { box-sizing: border-box; margin: 0; padding: 0; }"
-                + "body { background: #f0f0f0; font-family: Arial, sans-serif; padding: " + PAGE_PAD + "px; }"
+                + "body { background: #f0f0f0; font-family: 'Times New Roman', Times, serif; padding: " + PAGE_PAD + "px; }"
                 + ".grid { display: flex; flex-wrap: wrap; gap: " + GAP + "px; }"
 
                 // Card shell — flex column so header/footer are fixed, body flexes
