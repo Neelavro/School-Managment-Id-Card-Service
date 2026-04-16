@@ -46,11 +46,13 @@ public class AdmitCardController {
             @RequestParam(required = false) Integer classId,
             @RequestParam(required = false) Integer genderSectionId,
             @RequestParam(required = false) Long sectionId,
-            @RequestParam(required = false) Integer groupId   // ← add
+            @RequestParam(required = false) Integer groupId,   // ← add
+            @RequestParam(required = false) Integer startRoll,   // ← add
+            @RequestParam(required = false) Integer endRoll      // ← add
     ) {
         try {
             byte[] pdf = admitCardPdfService.generateAdmitCardsBySection(
-                    routineId, sessionId, classId, genderSectionId, sectionId, groupId); // ← pass
+                    routineId, sessionId, classId, genderSectionId, sectionId, groupId, startRoll, endRoll); // ← pass
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION,

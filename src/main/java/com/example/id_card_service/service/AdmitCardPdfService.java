@@ -170,7 +170,9 @@ public class AdmitCardPdfService {
             Integer classId,
             Integer genderSectionId,
             Long sectionId,
-            Integer groupId
+            Integer groupId,
+            Integer startRoll,   // ← add
+            Integer endRoll      // ← add
     ) throws Exception {
         try {
             AdmitCardBySectionRoutineResponseDto routine =
@@ -195,8 +197,7 @@ public class AdmitCardPdfService {
                     classId != null ? classId.longValue() : null,
                     genderSectionId != null ? genderSectionId.longValue() : null,
                     sectionId,
-                    groupId != null ? groupId.longValue() : null,
-                    null, null);
+                    groupId != null ? groupId.longValue() : null, startRoll,endRoll);
 
             System.out.println("Enrollments fetched: " + allEnrollments.size());
 
@@ -252,6 +253,17 @@ public class AdmitCardPdfService {
                                 .collect(Collectors.toList());
                     }
                 }
+            }
+            if (startRoll != null || endRoll != null) {
+                studentDataMap.entrySet().removeIf(entry -> {
+                    EnrollmentResponseDto e = enrollmentMap.get(entry.getKey());
+                    if (e == null) return true; // remove if no enrollment found
+                    Integer roll = e.getClassRoll();
+                    if (roll == null) return true;
+                    if (startRoll != null && roll < startRoll) return true;
+                    if (endRoll   != null && roll > endRoll)   return true;
+                    return false;
+                });
             }
 
             String html = buildHtmlBySection(routine, studentDataMap, enrollmentMap);
