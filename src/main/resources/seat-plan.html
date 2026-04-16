@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exam Seat Plan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #fff;
+        }
+
+        .card {
+            width: 720px;
+            border: 2px solid #000;
+            margin: 10px auto;
+            padding: 5px;
+        }
+
+        .title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 12px;
+            margin-top: -2px;
+        }
+
+        /* KEY ROW (photo + bar + logo) */
+        .top-row {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+
+        .photo {
+            width: 70px;
+            height: 75px;
+            border: 1px solid #000;
+            margin-right: 6px;
+        }
+
+        .photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .exam-bar {
+            flex: 1;
+            background: #cfcfcf;
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            padding: 4px 0;
+        }
+
+        .logo {
+            width: 70px;
+            text-align: center;
+            margin-left: 6px;
+        }
+
+        .logo img {
+            width: 60px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 2px 4px;
+            vertical-align: top;
+        }
+
+        .label {
+            width: 130px;
+        }
+
+        .roll-box {
+            border: 2px solid #000;
+            text-align: center;
+            width: 90px;
+        }
+
+        .roll-title {
+            border-bottom: 2px solid #000;
+            font-weight: bold;
+            font-size: 12px;
+            padding: 2px;
+        }
+
+        .roll-number {
+            font-size: 24px;
+            font-weight: bold;
+            padding: 6px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+
+    <div class="title">
+        LUTFUR RAHMAN DAKHIL (CADET) MADRASAH
+    </div>
+    <div class="subtitle">
+        LUTFUR RAHMAN ROAD, NATULLABAD.
+    </div>
+
+    <!-- EXACT ROW YOU WANTED -->
+    <div class="top-row">
+        <div class="photo">
+            <img src="student.jpg">
+        </div>
+
+        <div class="exam-bar">Exam Seat Plan</div>
+
+        <div class="logo">
+            <img src="logo.png">
+        </div>
+    </div>
+
+    <!-- INFO -->
+    <table>
+        <tr>
+            <td class="label">Name</td>
+            <td>: <b>MOSINA JANNAT TANHA</b></td>
+
+            <td rowspan="6" style="width:100px;">
+                <div class="roll-box">
+                    <div class="roll-title">Roll No.</div>
+                    <div class="roll-number">1</div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td class="label">Student ID</td>
+            <td>: 20230399</td>
+        </tr>
+        <tr>
+            <td class="label">Year/Session</td>
+            <td>: 2025</td>
+        </tr>
+        <tr>
+            <td class="label">Exam Name</td>
+            <td>: IST MODEL TEST</td>
+        </tr>
+        <tr>
+            <td class="label">Group</td>
+            <td>: N/A</td>
+        </tr>
+        <tr>
+            <td class="label">Section</td>
+            <td>: NURANI THREE-MORNING-GOLAP</td>
+        </tr>
+    </table>
+
+</div>
+
+</body>
+</html>
