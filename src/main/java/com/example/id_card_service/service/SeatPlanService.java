@@ -197,7 +197,7 @@ public class SeatPlanService {
                     ? "<div style=\"font-size:9px;font-weight:bold;\">LRMA</div>"
                     : "<img src=\"" + logoBase64 + "\" style=\"width:55px;height:55px;object-fit:contain;\">";
 
-            // Section label: "GenderName - SectionName" if section exists, else just "GenderName"
+            // Section label
             String sectionLabel;
             if (s.getGenderSection() != null) {
                 sectionLabel = s.getGenderSection().getGenderName();
@@ -208,30 +208,36 @@ public class SeatPlanService {
                 sectionLabel = "N/A";
             }
 
-            // Class name
-            String className = s.getStudentClass() != null ? s.getStudentClass().getName() : "N/A";
-
-            // Shift name
-            String shiftName = s.getShift() != null ? s.getShift().getName() : "N/A";
-
-            // Group — null means don't render the row
-            String groupName = s.getStudentGroup() != null ? s.getStudentGroup().getName() : null;
-
-            // Academic year
-            String yearName = s.getAcademicYear() != null ? s.getAcademicYear().getYearName() : "N/A";
-
-            // Roll
-            String roll = s.getClassRoll() != null ? String.valueOf(s.getClassRoll()) : "N/A";
-
-            // Exam name fallback
+            String className  = s.getStudentClass() != null ? s.getStudentClass().getName() : "N/A";
+            String shiftName  = s.getShift() != null ? s.getShift().getName() : "N/A";
+            String groupName  = s.getStudentGroup() != null ? s.getStudentGroup().getName() : null;
+            String yearName   = s.getAcademicYear() != null ? s.getAcademicYear().getYearName() : "N/A";
+            String roll       = s.getClassRoll() != null ? String.valueOf(s.getClassRoll()) : "N/A";
             String resolvedExamName = (examName != null && !examName.isBlank()) ? examName.toUpperCase() : "EXAM";
 
-            // rowspan: base 6 rows (name, studentId, year, examName, class/shift, section); +1 if group row present
-            int rowSpan = groupName != null ? 7 : 6;
+            // ── Name display tier ──────────────────────────────────────────────────
+            // Strategy (in order of preference):
+            //   1. Fits fine          → normal spacing, 10.5px
+            //   2. A bit long         → tighten spacing only, keep 10.5px
+            //   3. Longer             → tighten spacing + drop to 9.5px
+            //   4. Very long          → tighten spacing + drop to 8.5px
+            //
+            // "Length" here is the raw char count, which is a reasonable proxy for
+            // rendered width with Arial bold at these sizes. The spacing compression
+            // does most of the heavy lifting so the font drop is always subtle.
+            // ──────────────────────────────────────────────────────────────────────
+            String nameEnglish = s.getNameEnglish() != null ? s.getNameEnglish() : "";
+            int nameLen = nameEnglish.length();
+
+            String nameClass;
+            if      (nameLen <= 22) nameClass = "name-normal";   // 10.5px, normal spacing
+            else if (nameLen <= 28) nameClass = "name-tight";    // 10.5px, tight spacing
+            else if (nameLen <= 35) nameClass = "name-tighter";  //  9.5px, tighter spacing
+            else                    nameClass = "name-squeeze";  //  8.5px, max spacing compression
 
             currentPage.append("<div class=\"card\">")
 
-                    // Header: school name + address
+                    // Header
                     .append("<div class=\"card-header\">")
                     .append("<div class=\"school-name\">LUTFUR RAHMAN ALIM MADRASAH</div>")
                     .append("<div class=\"school-address\">LUTFUR RAHMAN ROAD, NATULLABAD, BARISHAL</div>")
@@ -244,34 +250,39 @@ public class SeatPlanService {
                     .append("<div class=\"logo-box\">").append(logoTag).append("</div>")
                     .append("</div>")
 
-                    // Info table
+                    // Info row: table left, roll box right
+                    .append("<div class=\"info-row\">")
                     .append("<div class=\"info-table-wrap\"><table class=\"info-table\">")
-                    .append("<tr>")
-                    .append("<td class=\"lbl\">Name</td><td class=\"sep\">:</td><td class=\"val\"><b>").append(s.getNameEnglish()).append("</b></td>")
-                    .append("<td rowspan=\"").append(rowSpan).append("\" class=\"roll-cell\">")
-                    .append("<div class=\"roll-box\">")
-                    .append("<div class=\"roll-title\">Roll No.</div>")
-                    .append("<div class=\"roll-number\">").append(roll).append("</div>")
-                    .append("</div>")
-                    .append("</td>")
-                    .append("</tr>")
+
+                    .append("<tr><td class=\"lbl\">Name</td><td class=\"sep\">:</td>")
+                    .append("<td class=\"val name-val\"><b class=\"").append(nameClass).append("\">")
+                    .append(nameEnglish).append("</b></td></tr>")
 
                     .append("<tr><td class=\"lbl\">Student ID</td><td class=\"sep\">:</td><td class=\"val\">").append(s.getStudentSystemId()).append("</td></tr>")
                     .append("<tr><td class=\"lbl\">Year/Session</td><td class=\"sep\">:</td><td class=\"val\">").append(yearName).append("</td></tr>")
                     .append("<tr><td class=\"lbl\">Exam Name</td><td class=\"sep\">:</td><td class=\"val\"><b>").append(resolvedExamName).append(" ").append(yearName).append("</b></td></tr>")
                     .append("<tr><td class=\"lbl\">Class / Shift</td><td class=\"sep\">:</td><td class=\"val\">").append(className).append(" / ").append(shiftName).append("</td></tr>");
 
-            // Conditionally append group row
             if (groupName != null) {
                 currentPage.append("<tr><td class=\"lbl\">Group</td><td class=\"sep\">:</td><td class=\"val\">").append(groupName).append("</td></tr>");
             }
 
             currentPage.append("<tr><td class=\"lbl\">Section</td><td class=\"sep\">:</td><td class=\"val\">").append(sectionLabel).append("</td></tr>")
                     .append("</table></div>")
+
+                    // Roll box
+                    .append("<div class=\"roll-cell\">")
+                    .append("<div class=\"roll-box\">")
+                    .append("<div class=\"roll-title\">Roll No.</div>")
+                    .append("<div class=\"roll-number\">").append(roll).append("</div>")
+                    .append("</div>")
+                    .append("</div>")
+
+                    .append("</div>") // end info-row
                     .append("</div>"); // end card
         }
 
-        // Flush the last page
+        // Flush last page
         pages.append("<div class=\"page\">").append(currentPage).append("</div>");
 
         return "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><style>"
@@ -282,20 +293,9 @@ public class SeatPlanService {
     }
 
     private String getCss() {
-        // Budget (inner height after 2px border + 4px padding top/bottom = 8px):
-        //   220 - 4 (border) - 8 (padding) = 208px usable
-        //   header:        ~22px  (school name 13px*1.1 + address 9px + 1px gap)
-        //   header mb:       2px
-        //   top-row:        56px  (photo frame height)
-        //   top-row mb:      2px
-        //   info-table:     ~90px (6 rows * ~13px, or 5 rows * ~13px)
-        //   exam-footer:    ~16px (border-top + padding + 10px text)
-        //   footer mt:       2px
-        //   subtotal:      ~190px — fits with a few px to spare
         return "* { box-sizing: border-box; margin: 0; padding: 0; }"
                 + "body { background: #fff; font-family: Arial, sans-serif; }"
 
-                // Each page is exactly PAGE_W x PAGE_H, padded, breaks before printing
                 + ".page {"
                 + "  width: " + PAGE_W + "px;"
                 + "  height: " + PAGE_H + "px;"
@@ -308,7 +308,6 @@ public class SeatPlanService {
                 + "  overflow: hidden;"
                 + "}"
 
-                // Card — flex column, strictly fixed size, no overflow
                 + ".card {"
                 + "  width: " + CARD_W + "px;"
                 + "  height: " + CARD_H + "px;"
@@ -319,12 +318,10 @@ public class SeatPlanService {
                 + "  overflow: hidden;"
                 + "}"
 
-                // Header — fixed, does not grow
                 + ".card-header { text-align: center; margin-bottom: 2px; flex-shrink: 0; }"
                 + ".school-name { font-weight: bold; font-size: 12px; line-height: 1.15; }"
                 + ".school-address { font-size: 8.5px; margin-top: 1px; }"
 
-                // Top row — fixed height 56px, does not grow
                 + ".top-row {"
                 + "  display: flex;"
                 + "  align-items: center;"
@@ -333,7 +330,6 @@ public class SeatPlanService {
                 + "  flex-shrink: 0;"
                 + "}"
 
-                // Photo frame — 56px tall
                 + ".photo-frame {"
                 + "  width: 55px;"
                 + "  height: 56px;"
@@ -347,7 +343,6 @@ public class SeatPlanService {
                 + "}"
                 + ".photo-placeholder { font-size: 9px; color: #555; text-align: center; }"
 
-                // Exam bar
                 + ".exam-bar {"
                 + "  flex: 1;"
                 + "  background: #cfcfcf;"
@@ -361,26 +356,61 @@ public class SeatPlanService {
                 + "  line-height: 1.3;"
                 + "}"
 
-                // Logo box
-                + ".logo-box {"
-                + "  width: 60px;"
-                + "  text-align: center;"
-                + "  flex-shrink: 0;"
+                + ".logo-box { width: 60px; text-align: center; flex-shrink: 0; }"
+
+                // Info row
+                + ".info-row {"
+                + "  display: flex;"
+                + "  align-items: center;"
+                + "  flex: 1;"
+                + "  overflow: hidden;"
+                + "  gap: 3px;"
                 + "}"
-
-                // Info table wrapper — takes remaining space, clips overflow
                 + ".info-table-wrap { flex: 1; overflow: hidden; }"
-
-                // Info table — compact rows
                 + ".info-table { width: 100%; border-collapse: collapse; font-size: 10.5px; }"
                 + ".info-table td { padding: 0.5px 3px; vertical-align: middle; line-height: 1.25; }"
                 + ".info-table td.lbl { width: 85px; font-weight: 600; white-space: nowrap; }"
                 + ".info-table td.sep { width: 8px; }"
-                + ".info-table td.val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }"
+                + ".info-table td.val { overflow: hidden; white-space: nowrap; }"
+                + ".info-table td.name-val { overflow: visible; }"
 
-                // Roll cell + box
-                + ".roll-cell { width: 88px; vertical-align: middle; text-align: center; padding: 0 3px; }"
-                + ".roll-box { border: 2px solid #000; text-align: center; }"
+                // ── Name tiers ────────────────────────────────────────────────────
+                // Tier 1: short name — full size, natural spacing
+                + "b.name-normal {"
+                + "  font-size: 10.5px;"
+                + "  letter-spacing: normal;"
+                + "  word-spacing: normal;"
+                + "}"
+                // Tier 2: medium name — same font size, squeeze spacing only
+                + "b.name-tight {"
+                + "  font-size: 10.5px;"
+                + "  letter-spacing: -0.4px;"
+                + "  word-spacing: -1px;"
+                + "}"
+                // Tier 3: long name — small font drop + tighter spacing
+                + "b.name-tighter {"
+                + "  font-size: 9.5px;"
+                + "  letter-spacing: -0.5px;"
+                + "  word-spacing: -1.5px;"
+                + "}"
+                // Tier 4: very long name — modest font drop + max spacing compression
+                + "b.name-squeeze {"
+                + "  font-size: 8.5px;"
+                + "  letter-spacing: -0.6px;"
+                + "  word-spacing: -2px;"
+                + "}"
+                // ─────────────────────────────────────────────────────────────────
+
+                // Roll cell
+                + ".roll-cell {"
+                + "  width: 76px;"
+                + "  flex-shrink: 0;"
+                + "  display: flex;"
+                + "  align-items: center;"
+                + "  justify-content: center;"
+                + "  align-self: center;"
+                + "}"
+                + ".roll-box { border: 2px solid #000; text-align: center; width: 100%; }"
                 + ".roll-title {"
                 + "  border-bottom: 2px solid #000;"
                 + "  font-weight: bold;"
