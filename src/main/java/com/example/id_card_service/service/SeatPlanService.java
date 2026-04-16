@@ -170,6 +170,38 @@ public class SeatPlanService {
         }
     }
 
+    /**
+     * Estimates rendered pixel width of a string in Arial Bold at 10.5px.
+     * Uses per-character width weights to handle wide uppercase names correctly.
+     */
+    private double estimateNameWidth(String name) {
+        double total = 0;
+        for (char c : name.toCharArray()) {
+            total += getCharWeight(c);
+        }
+        return total;
+    }
+
+    private double getCharWeight(char c) {
+        return switch (c) {
+            case 'M', 'W'                                        -> 9.5;
+            case 'D', 'G', 'H', 'K', 'N', 'O', 'Q', 'U',
+                 'X', 'Y', 'Z'                                   -> 8.5;
+            case 'A', 'B', 'C', 'E', 'F', 'J', 'L', 'P',
+                 'R', 'S', 'T', 'V'                              -> 7.5;
+            case 'm', 'w'                                        -> 8.5;
+            case 'd', 'g', 'h', 'k', 'n', 'o', 'p', 'q',
+                 'u', 'x', 'y', 'z'                              -> 6.5;
+            case 'a', 'b', 'c', 'e', 'f', 'r', 's', 't', 'v'   -> 6.0;
+            case 'I', '1'                                        -> 3.5;
+            case 'i', 'j', 'l'                                   -> 3.0;
+            case '.', ',', '!', '|', ':', ';'                    -> 3.0;
+            case ' '                                             -> 3.5;
+            case '-', '_'                                        -> 4.5;
+            default                                              -> 6.5;
+        };
+    }
+
     private String buildHtml(List<EnrollmentResponseDto> enrollments, String examName) {
         StringBuilder pages = new StringBuilder();
         StringBuilder currentPage = new StringBuilder();
@@ -177,7 +209,6 @@ public class SeatPlanService {
         for (int i = 0; i < enrollments.size(); i++) {
             EnrollmentResponseDto s = enrollments.get(i);
 
-            // Start a new page div every CARDS_PER_PAGE cards
             if (i > 0 && i % CARDS_PER_PAGE == 0) {
                 pages.append("<div class=\"page\">").append(currentPage).append("</div>");
                 currentPage = new StringBuilder();
@@ -187,7 +218,6 @@ public class SeatPlanService {
             String photoUrl = (s.getImage() != null && Boolean.TRUE.equals(s.getImage().getIsActive()))
                     ? fetchAndCompressToBase64(s.getImage().getImageUrl())
                     : "";
-
             String photoTag = photoUrl.isEmpty()
                     ? "<div class=\"photo-placeholder\">Photo</div>"
                     : "<img src=\"" + photoUrl + "\" style=\"width:100%;height:100%;object-fit:cover;\">";
@@ -208,32 +238,34 @@ public class SeatPlanService {
                 sectionLabel = "N/A";
             }
 
-            String className  = s.getStudentClass() != null ? s.getStudentClass().getName() : "N/A";
-            String shiftName  = s.getShift() != null ? s.getShift().getName() : "N/A";
-            String groupName  = s.getStudentGroup() != null ? s.getStudentGroup().getName() : null;
-            String yearName   = s.getAcademicYear() != null ? s.getAcademicYear().getYearName() : "N/A";
-            String roll       = s.getClassRoll() != null ? String.valueOf(s.getClassRoll()) : "N/A";
+            String className        = s.getStudentClass() != null ? s.getStudentClass().getName() : "N/A";
+            String shiftName        = s.getShift() != null ? s.getShift().getName() : "N/A";
+            String groupName        = s.getStudentGroup() != null ? s.getStudentGroup().getName() : null;
+            String yearName         = s.getAcademicYear() != null ? s.getAcademicYear().getYearName() : "N/A";
+            String roll             = s.getClassRoll() != null ? String.valueOf(s.getClassRoll()) : "N/A";
             String resolvedExamName = (examName != null && !examName.isBlank()) ? examName.toUpperCase() : "EXAM";
 
-            // ── Name display tier ──────────────────────────────────────────────────
-            // Strategy (in order of preference):
-            //   1. Fits fine          → normal spacing, 10.5px
-            //   2. A bit long         → tighten spacing only, keep 10.5px
-            //   3. Longer             → tighten spacing + drop to 9.5px
-            //   4. Very long          → tighten spacing + drop to 8.5px
-            //
-            // "Length" here is the raw char count, which is a reasonable proxy for
-            // rendered width with Arial bold at these sizes. The spacing compression
-            // does most of the heavy lifting so the font drop is always subtle.
-            // ──────────────────────────────────────────────────────────────────────
+            // ── Name display tier ──────────────────────────────────────────────
+            // Name row spans the full table width (lbl + sep + val, no roll cell).
+            // Available width for the name value cell ≈ full table width minus
+            // lbl(85px) + sep(8px) + cell padding(6px) ≈ 231px.
+            // Tier thresholds in estimated-pixel units at 10.5px Arial bold:
+            //   ≤ 200  → normal  (10.5px, natural spacing)
+            //   ≤ 225  → tight   (10.5px, squeeze spacing)
+            //   ≤ 250  → tighter ( 9.5px, tighter spacing)
+            //   > 250  → squeeze ( 8.5px, max compression)
+            // ──────────────────────────────────────────────────────────────────
             String nameEnglish = s.getNameEnglish() != null ? s.getNameEnglish() : "";
-            int nameLen = nameEnglish.length();
+            double nameWidth   = estimateNameWidth(nameEnglish);
 
             String nameClass;
-            if      (nameLen <= 22) nameClass = "name-normal";   // 10.5px, normal spacing
-            else if (nameLen <= 28) nameClass = "name-tight";    // 10.5px, tight spacing
-            else if (nameLen <= 35) nameClass = "name-tighter";  //  9.5px, tighter spacing
-            else                    nameClass = "name-squeeze";  //  8.5px, max spacing compression
+            if      (nameWidth <= 200) nameClass = "name-normal";
+            else if (nameWidth <= 225) nameClass = "name-tight";
+            else if (nameWidth <= 250) nameClass = "name-tighter";
+            else                       nameClass = "name-squeeze";
+
+            // rowspan covers all rows EXCEPT the name row: studentId, year, examName, class/shift, [group,] section
+            int rollRowSpan = groupName != null ? 5 : 4;
 
             currentPage.append("<div class=\"card\">")
 
@@ -250,15 +282,27 @@ public class SeatPlanService {
                     .append("<div class=\"logo-box\">").append(logoTag).append("</div>")
                     .append("</div>")
 
-                    // Info row: table left, roll box right
-                    .append("<div class=\"info-row\">")
+                    // Info table — name row is full-width, roll box rowspans the rest
                     .append("<div class=\"info-table-wrap\"><table class=\"info-table\">")
 
-                    .append("<tr><td class=\"lbl\">Name</td><td class=\"sep\">:</td>")
-                    .append("<td class=\"val name-val\"><b class=\"").append(nameClass).append("\">")
-                    .append(nameEnglish).append("</b></td></tr>")
+                    // Row 1: Name — spans all 4 columns (lbl + sep + val + roll), no roll cell here
+                    .append("<tr class=\"name-row\">")
+                    .append("<td class=\"lbl\">Name</td>")
+                    .append("<td class=\"sep\">:</td>")
+                    .append("<td class=\"val name-val\" colspan=\"2\"><b class=\"").append(nameClass).append("\">").append(nameEnglish).append("</b></td>")
+                    .append("</tr>")
 
-                    .append("<tr><td class=\"lbl\">Student ID</td><td class=\"sep\">:</td><td class=\"val\">").append(s.getStudentSystemId()).append("</td></tr>")
+                    // Row 2: Student ID — roll box starts here with rowspan
+                    .append("<tr>")
+                    .append("<td class=\"lbl\">Student ID</td><td class=\"sep\">:</td><td class=\"val\">").append(s.getStudentSystemId()).append("</td>")
+                    .append("<td rowspan=\"").append(rollRowSpan).append("\" class=\"roll-cell\">")
+                    .append("<div class=\"roll-box\">")
+                    .append("<div class=\"roll-title\">Roll No.</div>")
+                    .append("<div class=\"roll-number\">").append(roll).append("</div>")
+                    .append("</div>")
+                    .append("</td>")
+                    .append("</tr>")
+
                     .append("<tr><td class=\"lbl\">Year/Session</td><td class=\"sep\">:</td><td class=\"val\">").append(yearName).append("</td></tr>")
                     .append("<tr><td class=\"lbl\">Exam Name</td><td class=\"sep\">:</td><td class=\"val\"><b>").append(resolvedExamName).append(" ").append(yearName).append("</b></td></tr>")
                     .append("<tr><td class=\"lbl\">Class / Shift</td><td class=\"sep\">:</td><td class=\"val\">").append(className).append(" / ").append(shiftName).append("</td></tr>");
@@ -267,22 +311,12 @@ public class SeatPlanService {
                 currentPage.append("<tr><td class=\"lbl\">Group</td><td class=\"sep\">:</td><td class=\"val\">").append(groupName).append("</td></tr>");
             }
 
-            currentPage.append("<tr><td class=\"lbl\">Section</td><td class=\"sep\">:</td><td class=\"val\">").append(sectionLabel).append("</td></tr>")
+            currentPage
+                    .append("<tr><td class=\"lbl\">Section</td><td class=\"sep\">:</td><td class=\"val\">").append(sectionLabel).append("</td></tr>")
                     .append("</table></div>")
-
-                    // Roll box
-                    .append("<div class=\"roll-cell\">")
-                    .append("<div class=\"roll-box\">")
-                    .append("<div class=\"roll-title\">Roll No.</div>")
-                    .append("<div class=\"roll-number\">").append(roll).append("</div>")
-                    .append("</div>")
-                    .append("</div>")
-
-                    .append("</div>") // end info-row
                     .append("</div>"); // end card
         }
 
-        // Flush last page
         pages.append("<div class=\"page\">").append(currentPage).append("</div>");
 
         return "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><style>"
@@ -358,59 +392,29 @@ public class SeatPlanService {
 
                 + ".logo-box { width: 60px; text-align: center; flex-shrink: 0; }"
 
-                // Info row
-                + ".info-row {"
-                + "  display: flex;"
-                + "  align-items: center;"
-                + "  flex: 1;"
-                + "  overflow: hidden;"
-                + "  gap: 3px;"
-                + "}"
+                // Info table fills remaining card height
                 + ".info-table-wrap { flex: 1; overflow: hidden; }"
                 + ".info-table { width: 100%; border-collapse: collapse; font-size: 10.5px; }"
                 + ".info-table td { padding: 0.5px 3px; vertical-align: middle; line-height: 1.25; }"
                 + ".info-table td.lbl { width: 85px; font-weight: 600; white-space: nowrap; }"
                 + ".info-table td.sep { width: 8px; }"
                 + ".info-table td.val { overflow: hidden; white-space: nowrap; }"
-                + ".info-table td.name-val { overflow: visible; }"
 
-                // ── Name tiers ────────────────────────────────────────────────────
-                // Tier 1: short name — full size, natural spacing
-                + "b.name-normal {"
-                + "  font-size: 10.5px;"
-                + "  letter-spacing: normal;"
-                + "  word-spacing: normal;"
-                + "}"
-                // Tier 2: medium name — same font size, squeeze spacing only
-                + "b.name-tight {"
-                + "  font-size: 10.5px;"
-                + "  letter-spacing: -0.4px;"
-                + "  word-spacing: -1px;"
-                + "}"
-                // Tier 3: long name — small font drop + tighter spacing
-                + "b.name-tighter {"
-                + "  font-size: 9.5px;"
-                + "  letter-spacing: -0.5px;"
-                + "  word-spacing: -1.5px;"
-                + "}"
-                // Tier 4: very long name — modest font drop + max spacing compression
-                + "b.name-squeeze {"
-                + "  font-size: 8.5px;"
-                + "  letter-spacing: -0.6px;"
-                + "  word-spacing: -2px;"
-                + "}"
-                // ─────────────────────────────────────────────────────────────────
+                // Name row: val cell gets colspan=2 so it goes all the way to the right edge
+                // white-space: nowrap keeps it on one line; overflow hidden clips only if
+                // the squeeze tier still isn't enough (extreme edge case)
+                + ".info-table td.name-val { overflow: hidden; white-space: nowrap; }"
 
-                // Roll cell
-                + ".roll-cell {"
-                + "  width: 76px;"
-                + "  flex-shrink: 0;"
-                + "  display: flex;"
-                + "  align-items: center;"
-                + "  justify-content: center;"
-                + "  align-self: center;"
-                + "}"
-                + ".roll-box { border: 2px solid #000; text-align: center; width: 100%; }"
+                // ── Name tiers ────────────────────────────────────────────────
+                + "b.name-normal  { font-size: 10.5px; letter-spacing: normal; word-spacing: normal; white-space: nowrap; }"
+                + "b.name-tight   { font-size: 10.5px; letter-spacing: -0.4px; word-spacing: -1px;   white-space: nowrap; }"
+                + "b.name-tighter { font-size:  9.5px; letter-spacing: -0.5px; word-spacing: -1.5px; white-space: nowrap; }"
+                + "b.name-squeeze { font-size:  8.5px; letter-spacing: -0.6px; word-spacing: -2px;   white-space: nowrap; }"
+                // ─────────────────────────────────────────────────────────────
+
+                // Roll cell — rowspans Student ID through Section rows
+                + ".roll-cell { width: 76px; vertical-align: middle; text-align: center; padding: 0 3px; }"
+                + ".roll-box { border: 2px solid #000; text-align: center; }"
                 + ".roll-title {"
                 + "  border-bottom: 2px solid #000;"
                 + "  font-weight: bold;"
