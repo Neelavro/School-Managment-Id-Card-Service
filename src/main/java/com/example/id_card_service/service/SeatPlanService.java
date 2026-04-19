@@ -28,12 +28,16 @@ public class SeatPlanService {
     private static final int ROWS           = 3;
     private static final int CARDS_PER_PAGE = COLS * ROWS;
 
-    private static final int CARD_W         = 340;
-    private static final int CARD_H         = 220;
-    private static final int GAP            = 8;
+    // A4 portrait at 96 DPI = 794 × 1123 px
+    // Page padding and gap between cards
     private static final int PAGE_PAD       = 10;
-    private static final int PAGE_W         = COLS * CARD_W + (COLS - 1) * GAP + PAGE_PAD * 2;
-    private static final int PAGE_H         = ROWS * CARD_H + (ROWS - 1) * GAP + PAGE_PAD * 2;
+    private static final int GAP            = 8;
+
+    // Card dimensions — smaller than the full A4 fill so gaps between cards are visible.
+    // Horizontal gap per side: (794 - 2*PAGE_PAD - 2*CARD_W - GAP) / 2 ≈ 24px each side
+    // Vertical gap between rows: (1123 - 2*PAGE_PAD - 3*CARD_H) / 2 ≈ 36px each gap
+    private static final int CARD_W         = 360;
+    private static final int CARD_H         = 340;
 
     private String logoBase64;
 
@@ -160,9 +164,13 @@ public class SeatPlanService {
 
             byte[] pdf = page.pdf(new Page.PdfOptions()
                     .setPrintBackground(true)
-                    .setMargin(new Margin().setTop("0").setBottom("0").setLeft("0").setRight("0"))
-                    .setWidth(PAGE_W + "px")
-                    .setHeight(PAGE_H + "px")
+                    .setFormat("A4")
+                    .setLandscape(false)
+                    .setMargin(new Margin()
+                            .setTop(PAGE_PAD + "px")
+                            .setBottom(PAGE_PAD + "px")
+                            .setLeft(PAGE_PAD + "px")
+                            .setRight(PAGE_PAD + "px"))
             );
 
             browser.close();
@@ -171,7 +179,7 @@ public class SeatPlanService {
     }
 
     /**
-     * Estimates rendered pixel width of a string in Arial Bold at 10.5px.
+     * Estimates rendered pixel width of a string in Arial Bold at 13px.
      * Uses per-character width weights to handle wide uppercase names correctly.
      */
     private double estimateNameWidth(String name) {
@@ -184,21 +192,21 @@ public class SeatPlanService {
 
     private double getCharWeight(char c) {
         return switch (c) {
-            case 'M', 'W'                                        -> 9.5;
+            case 'M', 'W'                                        -> 12.0;
             case 'D', 'G', 'H', 'K', 'N', 'O', 'Q', 'U',
-                 'X', 'Y', 'Z'                                   -> 8.5;
+                 'X', 'Y', 'Z'                                   -> 10.5;
             case 'A', 'B', 'C', 'E', 'F', 'J', 'L', 'P',
-                 'R', 'S', 'T', 'V'                              -> 7.5;
-            case 'm', 'w'                                        -> 8.5;
+                 'R', 'S', 'T', 'V'                              -> 9.5;
+            case 'm', 'w'                                        -> 11.0;
             case 'd', 'g', 'h', 'k', 'n', 'o', 'p', 'q',
-                 'u', 'x', 'y', 'z'                              -> 6.5;
-            case 'a', 'b', 'c', 'e', 'f', 'r', 's', 't', 'v'   -> 6.0;
-            case 'I', '1'                                        -> 3.5;
-            case 'i', 'j', 'l'                                   -> 3.0;
-            case '.', ',', '!', '|', ':', ';'                    -> 3.0;
-            case ' '                                             -> 3.5;
-            case '-', '_'                                        -> 4.5;
-            default                                              -> 6.5;
+                 'u', 'x', 'y', 'z'                              -> 8.5;
+            case 'a', 'b', 'c', 'e', 'f', 'r', 's', 't', 'v'   -> 8.0;
+            case 'I', '1'                                        -> 4.5;
+            case 'i', 'j', 'l'                                   -> 4.0;
+            case '.', ',', '!', '|', ':', ';'                    -> 4.0;
+            case ' '                                             -> 4.5;
+            case '-', '_'                                        -> 6.0;
+            default                                              -> 8.5;
         };
     }
 
@@ -224,8 +232,8 @@ public class SeatPlanService {
 
             // Logo
             String logoTag = logoBase64.isEmpty()
-                    ? "<div style=\"font-size:9px;font-weight:bold;\">LRMA</div>"
-                    : "<img src=\"" + logoBase64 + "\" style=\"width:55px;height:55px;object-fit:contain;\">";
+                    ? "<div style=\"font-size:11px;font-weight:bold;\">LRMA</div>"
+                    : "<img src=\"" + logoBase64 + "\" style=\"width:70px;height:70px;object-fit:contain;\">";
 
             // Section label
             String sectionLabel;
@@ -238,34 +246,31 @@ public class SeatPlanService {
                 sectionLabel = "N/A";
             }
 
-            String className        = s.getStudentClass() != null ? s.getStudentClass().getName() : "N/A";
-            String shiftName        = s.getShift() != null ? s.getShift().getName() : "N/A";
-            String groupName        = s.getStudentGroup() != null ? s.getStudentGroup().getName() : null;
-            String yearName         = s.getAcademicYear() != null ? s.getAcademicYear().getYearName() : "N/A";
-            String roll             = s.getClassRoll() != null ? String.valueOf(s.getClassRoll()) : "N/A";
-            String resolvedExamName = (examName != null && !examName.isBlank()) ? examName.toUpperCase() : "EXAM";
+            String className = s.getStudentClass() != null ? s.getStudentClass().getName() : "N/A";
+            String shiftName = s.getShift() != null ? s.getShift().getName() : "N/A";
+            String groupName = s.getStudentGroup() != null ? s.getStudentGroup().getName() : null;
+            String yearName  = s.getAcademicYear() != null ? s.getAcademicYear().getYearName() : "N/A";
+            String roll      = s.getClassRoll() != null ? String.valueOf(s.getClassRoll()) : "N/A";
+
+            // Full exam label shown inside the exam bar: e.g. "HALF YEARLY EXAM 2025"
+            String resolvedExamName = (examName != null && !examName.isBlank())
+                    ? examName.toUpperCase() + " " + yearName
+                    : "EXAM " + yearName;
 
             // ── Name display tier ──────────────────────────────────────────────
-            // Name row spans the full table width (lbl + sep + val, no roll cell).
-            // Available width for the name value cell ≈ full table width minus
-            // lbl(85px) + sep(8px) + cell padding(6px) ≈ 231px.
-            // Tier thresholds in estimated-pixel units at 10.5px Arial bold:
-            //   ≤ 200  → normal  (10.5px, natural spacing)
-            //   ≤ 225  → tight   (10.5px, squeeze spacing)
-            //   ≤ 250  → tighter ( 9.5px, tighter spacing)
-            //   > 250  → squeeze ( 8.5px, max compression)
-            // ──────────────────────────────────────────────────────────────────
+            // Available width for name cell at larger card size ≈ 270px
             String nameEnglish = s.getNameEnglish() != null ? s.getNameEnglish() : "";
             double nameWidth   = estimateNameWidth(nameEnglish);
 
             String nameClass;
-            if      (nameWidth <= 200) nameClass = "name-normal";
-            else if (nameWidth <= 225) nameClass = "name-tight";
-            else if (nameWidth <= 250) nameClass = "name-tighter";
+            if      (nameWidth <= 240) nameClass = "name-normal";
+            else if (nameWidth <= 270) nameClass = "name-tight";
+            else if (nameWidth <= 300) nameClass = "name-tighter";
             else                       nameClass = "name-squeeze";
 
-            // rowspan covers all rows EXCEPT the name row: studentId, year, examName, class/shift, [group,] section
-            int rollRowSpan = groupName != null ? 5 : 4;
+            // rowspan covers all rows EXCEPT the name row:
+            // studentId, class/shift, [group,] section
+            int rollRowSpan = groupName != null ? 3 : 2;
 
             currentPage.append("<div class=\"card\">")
 
@@ -275,10 +280,13 @@ public class SeatPlanService {
                     .append("<div class=\"school-address\">LUTFUR RAHMAN ROAD, NATULLABAD, BARISHAL</div>")
                     .append("</div>")
 
-                    // Top row: photo | exam bar | logo
+                    // Top row: photo | exam bar (title + full exam name beneath) | logo
                     .append("<div class=\"top-row\">")
                     .append("<div class=\"photo-frame\">").append(photoTag).append("</div>")
-                    .append("<div class=\"exam-bar\">Exam Seat Plan</div>")
+                    .append("<div class=\"exam-bar\">")
+                    .append("<div class=\"exam-bar-title\">Exam Seat Plan</div>")
+                    .append("<div class=\"exam-bar-name\">").append(resolvedExamName).append("</div>")
+                    .append("</div>")
                     .append("<div class=\"logo-box\">").append(logoTag).append("</div>")
                     .append("</div>")
 
@@ -303,8 +311,6 @@ public class SeatPlanService {
                     .append("</td>")
                     .append("</tr>")
 
-                    .append("<tr><td class=\"lbl\">Year/Session</td><td class=\"sep\">:</td><td class=\"val\">").append(yearName).append("</td></tr>")
-                    .append("<tr><td class=\"lbl\">Exam Name</td><td class=\"sep\">:</td><td class=\"val\"><b>").append(resolvedExamName).append(" ").append(yearName).append("</b></td></tr>")
                     .append("<tr><td class=\"lbl\">Class / Shift</td><td class=\"sep\">:</td><td class=\"val\">").append(className).append(" / ").append(shiftName).append("</td></tr>");
 
             if (groupName != null) {
@@ -330,13 +336,15 @@ public class SeatPlanService {
         return "* { box-sizing: border-box; margin: 0; padding: 0; }"
                 + "body { background: #fff; font-family: Arial, sans-serif; }"
 
+                // Page fills exactly one A4 sheet — Playwright's margin handles the outer padding,
+                // so the .page div itself is sized to the available inner area.
                 + ".page {"
-                + "  width: " + PAGE_W + "px;"
-                + "  height: " + PAGE_H + "px;"
-                + "  padding: " + PAGE_PAD + "px;"
+                + "  width: " + (794 - 2 * PAGE_PAD) + "px;"
+                + "  height: " + (1123 - 2 * PAGE_PAD) + "px;"
                 + "  display: flex;"
                 + "  flex-wrap: wrap;"
-                + "  gap: " + GAP + "px;"
+                + "  justify-content: space-evenly;"
+                + "  align-content: space-evenly;"
                 + "  page-break-after: always;"
                 + "  break-after: page;"
                 + "  overflow: hidden;"
@@ -346,27 +354,27 @@ public class SeatPlanService {
                 + "  width: " + CARD_W + "px;"
                 + "  height: " + CARD_H + "px;"
                 + "  border: 2px solid #000;"
-                + "  padding: 4px 5px;"
+                + "  padding: 6px 8px;"
                 + "  display: flex;"
                 + "  flex-direction: column;"
                 + "  overflow: hidden;"
                 + "}"
 
-                + ".card-header { text-align: center; margin-bottom: 2px; flex-shrink: 0; }"
-                + ".school-name { font-weight: bold; font-size: 12px; line-height: 1.15; }"
-                + ".school-address { font-size: 8.5px; margin-top: 1px; }"
+                + ".card-header { text-align: center; margin-bottom: 4px; flex-shrink: 0; }"
+                + ".school-name { font-weight: bold; font-size: 14px; line-height: 1.2; }"
+                + ".school-address { font-size: 10px; margin-top: 2px; margin-bottom: 6px; }"
 
                 + ".top-row {"
                 + "  display: flex;"
                 + "  align-items: center;"
-                + "  gap: 5px;"
-                + "  margin-bottom: 2px;"
+                + "  gap: 8px;"
+                + "  margin-bottom: 4px;"
                 + "  flex-shrink: 0;"
                 + "}"
 
                 + ".photo-frame {"
-                + "  width: 55px;"
-                + "  height: 56px;"
+                + "  width: 72px;"
+                + "  height: 80px;"
                 + "  border: 1px solid #000;"
                 + "  flex-shrink: 0;"
                 + "  overflow: hidden;"
@@ -375,56 +383,63 @@ public class SeatPlanService {
                 + "  justify-content: center;"
                 + "  background: #ddd;"
                 + "}"
-                + ".photo-placeholder { font-size: 9px; color: #555; text-align: center; }"
+                + ".photo-placeholder { font-size: 11px; color: #555; text-align: center; }"
 
+                // exam-bar is a flex column: title on top, exam name below
                 + ".exam-bar {"
                 + "  flex: 1;"
                 + "  background: #cfcfcf;"
                 + "  text-align: center;"
-                + "  font-weight: bold;"
-                + "  font-size: 11.5px;"
-                + "  padding: 0 4px;"
+                + "  padding: 4px 6px;"
                 + "  display: flex;"
+                + "  flex-direction: column;"
                 + "  align-items: center;"
                 + "  justify-content: center;"
-                + "  line-height: 1.3;"
+                + "  gap: 3px;"
+                + "}"
+                + ".exam-bar-title {"
+                + "  font-weight: bold;"
+                + "  font-size: 14px;"
+                + "  line-height: 1.2;"
+                + "}"
+                + ".exam-bar-name {"
+                + "  font-size: 11px;"
+                + "  font-weight: bold;"
+                + "  line-height: 1.2;"
                 + "}"
 
-                + ".logo-box { width: 60px; text-align: center; flex-shrink: 0; }"
+                + ".logo-box { width: 76px; text-align: center; flex-shrink: 0; }"
 
                 // Info table fills remaining card height
                 + ".info-table-wrap { flex: 1; overflow: hidden; }"
-                + ".info-table { width: 100%; border-collapse: collapse; font-size: 10.5px; }"
-                + ".info-table td { padding: 0.5px 3px; vertical-align: middle; line-height: 1.25; }"
-                + ".info-table td.lbl { width: 85px; font-weight: 600; white-space: nowrap; }"
-                + ".info-table td.sep { width: 8px; }"
+                + ".info-table { width: 100%; border-collapse: collapse; font-size: 13px; }"
+                + ".info-table td { padding: 2px 4px; vertical-align: middle; line-height: 1.4; }"
+                + ".info-table td.lbl { width: 100px; font-weight: 600; white-space: nowrap; }"
+                + ".info-table td.sep { width: 10px; }"
                 + ".info-table td.val { overflow: hidden; white-space: nowrap; }"
 
-                // Name row: val cell gets colspan=2 so it goes all the way to the right edge
-                // white-space: nowrap keeps it on one line; overflow hidden clips only if
-                // the squeeze tier still isn't enough (extreme edge case)
                 + ".info-table td.name-val { overflow: hidden; white-space: nowrap; }"
 
                 // ── Name tiers ────────────────────────────────────────────────
-                + "b.name-normal  { font-size: 10.5px; letter-spacing: normal; word-spacing: normal; white-space: nowrap; }"
-                + "b.name-tight   { font-size: 10.5px; letter-spacing: -0.4px; word-spacing: -1px;   white-space: nowrap; }"
-                + "b.name-tighter { font-size:  9.5px; letter-spacing: -0.5px; word-spacing: -1.5px; white-space: nowrap; }"
-                + "b.name-squeeze { font-size:  8.5px; letter-spacing: -0.6px; word-spacing: -2px;   white-space: nowrap; }"
+                + "b.name-normal  { font-size: 13px;  letter-spacing: normal;  word-spacing: normal;   white-space: nowrap; }"
+                + "b.name-tight   { font-size: 13px;  letter-spacing: -0.4px;  word-spacing: -1px;     white-space: nowrap; }"
+                + "b.name-tighter { font-size: 11px;  letter-spacing: -0.5px;  word-spacing: -1.5px;   white-space: nowrap; }"
+                + "b.name-squeeze { font-size: 10px;  letter-spacing: -0.6px;  word-spacing: -2px;     white-space: nowrap; }"
                 // ─────────────────────────────────────────────────────────────
 
                 // Roll cell — rowspans Student ID through Section rows
-                + ".roll-cell { width: 76px; vertical-align: middle; text-align: center; padding: 0 3px; }"
+                + ".roll-cell { width: 90px; vertical-align: middle; text-align: center; padding: 0 4px; }"
                 + ".roll-box { border: 2px solid #000; text-align: center; }"
                 + ".roll-title {"
                 + "  border-bottom: 2px solid #000;"
                 + "  font-weight: bold;"
-                + "  font-size: 9.5px;"
-                + "  padding: 1px;"
+                + "  font-size: 11px;"
+                + "  padding: 2px;"
                 + "}"
                 + ".roll-number {"
-                + "  font-size: 24px;"
+                + "  font-size: 32px;"
                 + "  font-weight: bold;"
-                + "  padding: 2px 0;"
+                + "  padding: 4px 0;"
                 + "  line-height: 1.1;"
                 + "}";
     }
