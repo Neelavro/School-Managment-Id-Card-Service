@@ -33,11 +33,10 @@ public class SeatPlanService {
     private static final int PAGE_PAD       = 10;
     private static final int GAP            = 8;
 
-    // Card dimensions — smaller than the full A4 fill so gaps between cards are visible.
-    // Horizontal gap per side: (794 - 2*PAGE_PAD - 2*CARD_W - GAP) / 2 ≈ 24px each side
-    // Vertical gap between rows: (1123 - 2*PAGE_PAD - 3*CARD_H) / 2 ≈ 36px each gap
-    private static final int CARD_W         = 360;
-    private static final int CARD_H         = 340;
+    // Card dimensions — reduced height to increase vertical gap between rows;
+    // reduced width to increase horizontal gap between columns.
+    private static final int CARD_W         = 295;  // narrower → wider horizontal gap between cards (~61px center gap)
+    private static final int CARD_H         = 265;  // content-driven; flex:1 removed from table-wrap
 
     private String logoBase64;
 
@@ -258,14 +257,14 @@ public class SeatPlanService {
                     : "EXAM " + yearName;
 
             // ── Name display tier ──────────────────────────────────────────────
-            // Available width for name cell at larger card size ≈ 270px
+            // Available width for name cell at card size ≈ 250px
             String nameEnglish = s.getNameEnglish() != null ? s.getNameEnglish() : "";
             double nameWidth   = estimateNameWidth(nameEnglish);
 
             String nameClass;
-            if      (nameWidth <= 240) nameClass = "name-normal";
-            else if (nameWidth <= 270) nameClass = "name-tight";
-            else if (nameWidth <= 300) nameClass = "name-tighter";
+            if      (nameWidth <= 190) nameClass = "name-normal";
+            else if (nameWidth <= 220) nameClass = "name-tight";
+            else if (nameWidth <= 250) nameClass = "name-tighter";
             else                       nameClass = "name-squeeze";
 
             // rowspan covers all rows EXCEPT the name row:
@@ -274,13 +273,14 @@ public class SeatPlanService {
 
             currentPage.append("<div class=\"card\">")
 
-                    // Header
+                    // Header — Arabic Bismillah + school name + address
                     .append("<div class=\"card-header\">")
+                    .append("<div class=\"ac-arabic\">بسم الله الرحمن الرحيم</div>")
                     .append("<div class=\"school-name\">LUTFUR RAHMAN ALIM MADRASAH</div>")
                     .append("<div class=\"school-address\">LUTFUR RAHMAN ROAD, NATULLABAD, BARISHAL</div>")
                     .append("</div>")
 
-                    // Top row: photo | exam bar (title + full exam name beneath) | logo
+                    // Top row: photo | exam bar | logo
                     .append("<div class=\"top-row\">")
                     .append("<div class=\"photo-frame\">").append(photoTag).append("</div>")
                     .append("<div class=\"exam-bar\">")
@@ -293,7 +293,7 @@ public class SeatPlanService {
                     // Info table — name row is full-width, roll box rowspans the rest
                     .append("<div class=\"info-table-wrap\"><table class=\"info-table\">")
 
-                    // Row 1: Name — spans all 4 columns (lbl + sep + val + roll), no roll cell here
+                    // Row 1: Name — spans all 4 columns
                     .append("<tr class=\"name-row\">")
                     .append("<td class=\"lbl\">Name</td>")
                     .append("<td class=\"sep\">:</td>")
@@ -311,13 +311,15 @@ public class SeatPlanService {
                     .append("</td>")
                     .append("</tr>")
 
-                    .append("<tr><td class=\"lbl\">Class / Shift</td><td class=\"sep\">:</td><td class=\"val\">").append(className).append(" / ").append(shiftName).append("</td></tr>");
+                    // Row 3: Class / Shift — bold values
+                    .append("<tr><td class=\"lbl\">Class / Shift</td><td class=\"sep\">:</td><td class=\"val\"><b>").append(className).append(" / ").append(shiftName).append("</b></td></tr>");
 
             if (groupName != null) {
-                currentPage.append("<tr><td class=\"lbl\">Group</td><td class=\"sep\">:</td><td class=\"val\">").append(groupName).append("</td></tr>");
+                currentPage.append("<tr><td class=\"lbl\">Group</td><td class=\"sep\">:</td><td class=\"val\"><b>").append(groupName).append("</b></td></tr>");
             }
 
             currentPage
+                    // Section — plain value (not bold)
                     .append("<tr><td class=\"lbl\">Section</td><td class=\"sep\">:</td><td class=\"val\">").append(sectionLabel).append("</td></tr>")
                     .append("</table></div>")
                     .append("</div>"); // end card
@@ -336,8 +338,7 @@ public class SeatPlanService {
         return "* { box-sizing: border-box; margin: 0; padding: 0; }"
                 + "body { background: #fff; font-family: Arial, sans-serif; }"
 
-                // Page fills exactly one A4 sheet — Playwright's margin handles the outer padding,
-                // so the .page div itself is sized to the available inner area.
+                // Page fills exactly one A4 sheet
                 + ".page {"
                 + "  width: " + (794 - 2 * PAGE_PAD) + "px;"
                 + "  height: " + (1123 - 2 * PAGE_PAD) + "px;"
@@ -354,27 +355,36 @@ public class SeatPlanService {
                 + "  width: " + CARD_W + "px;"
                 + "  height: " + CARD_H + "px;"
                 + "  border: 2px solid #000;"
-                + "  padding: 6px 8px;"
+                + "  padding: 5px 7px;"
                 + "  display: flex;"
                 + "  flex-direction: column;"
                 + "  overflow: hidden;"
                 + "}"
 
-                + ".card-header { text-align: center; margin-bottom: 4px; flex-shrink: 0; }"
-                + ".school-name { font-weight: bold; font-size: 14px; line-height: 1.2; }"
-                + ".school-address { font-size: 10px; margin-top: 2px; margin-bottom: 6px; }"
+                // ── Card header: Arabic + school name + address ──
+                + ".card-header { text-align: center; margin-bottom: 3px; flex-shrink: 0; }"
+                + ".ac-arabic {"
+                + "  font-family: 'Arial', sans-serif;"
+                + "  font-size: 12px;"
+                + "  direction: rtl;"
+                + "  unicode-bidi: embed;"
+                + "  line-height: 1.3;"
+                + "  margin-bottom: 1px;"
+                + "}"
+                + ".school-name { font-weight: bold; font-size: 13px; line-height: 1.2; }"
+                + ".school-address { font-size: 9px; margin-top: 1px; margin-bottom: 4px; }"
 
                 + ".top-row {"
                 + "  display: flex;"
                 + "  align-items: center;"
-                + "  gap: 8px;"
-                + "  margin-bottom: 4px;"
+                + "  gap: 7px;"
+                + "  margin-bottom: 3px;"
                 + "  flex-shrink: 0;"
                 + "}"
 
                 + ".photo-frame {"
-                + "  width: 72px;"
-                + "  height: 80px;"
+                + "  width: 58px;"
+                + "  height: 64px;"
                 + "  border: 1px solid #000;"
                 + "  flex-shrink: 0;"
                 + "  overflow: hidden;"
@@ -383,63 +393,58 @@ public class SeatPlanService {
                 + "  justify-content: center;"
                 + "  background: #ddd;"
                 + "}"
-                + ".photo-placeholder { font-size: 11px; color: #555; text-align: center; }"
+                + ".photo-placeholder { font-size: 10px; color: #555; text-align: center; }"
 
-                // exam-bar is a flex column: title on top, exam name below
+                // Exam bar — both lines share identical font size, weight, and family
                 + ".exam-bar {"
                 + "  flex: 1;"
                 + "  background: #cfcfcf;"
                 + "  text-align: center;"
-                + "  padding: 4px 6px;"
+                + "  padding: 3px 5px;"
                 + "  display: flex;"
                 + "  flex-direction: column;"
                 + "  align-items: center;"
                 + "  justify-content: center;"
-                + "  gap: 3px;"
+                + "  gap: 2px;"
                 + "}"
-                + ".exam-bar-title {"
+                + ".exam-bar-title, .exam-bar-name {"
                 + "  font-weight: bold;"
-                + "  font-size: 14px;"
+                + "  font-size: 12px;"
                 + "  line-height: 1.2;"
-                + "}"
-                + ".exam-bar-name {"
-                + "  font-size: 11px;"
-                + "  font-weight: bold;"
-                + "  line-height: 1.2;"
+                + "  font-family: Arial, sans-serif;"
                 + "}"
 
-                + ".logo-box { width: 76px; text-align: center; flex-shrink: 0; }"
+                + ".logo-box { width: 70px; text-align: center; flex-shrink: 0; }"
 
-                // Info table fills remaining card height
-                + ".info-table-wrap { flex: 1; overflow: hidden; }"
-                + ".info-table { width: 100%; border-collapse: collapse; font-size: 13px; }"
-                + ".info-table td { padding: 2px 4px; vertical-align: middle; line-height: 1.4; }"
-                + ".info-table td.lbl { width: 100px; font-weight: 600; white-space: nowrap; }"
+                // Info table — shrink to content, not flex-stretched
+                + ".info-table-wrap { flex-shrink: 0; overflow: hidden; }"
+                + ".info-table { width: 100%; border-collapse: collapse; font-size: 12px; }"
+                + ".info-table td { padding: 1px 3px; vertical-align: middle; line-height: 1.35; }"
+                + ".info-table td.lbl { width: 80px; font-weight: 600; white-space: nowrap; }"
                 + ".info-table td.sep { width: 10px; }"
                 + ".info-table td.val { overflow: hidden; white-space: nowrap; }"
-
                 + ".info-table td.name-val { overflow: hidden; white-space: nowrap; }"
 
                 // ── Name tiers ────────────────────────────────────────────────
-                + "b.name-normal  { font-size: 13px;  letter-spacing: normal;  word-spacing: normal;   white-space: nowrap; }"
-                + "b.name-tight   { font-size: 13px;  letter-spacing: -0.4px;  word-spacing: -1px;     white-space: nowrap; }"
-                + "b.name-tighter { font-size: 11px;  letter-spacing: -0.5px;  word-spacing: -1.5px;   white-space: nowrap; }"
-                + "b.name-squeeze { font-size: 10px;  letter-spacing: -0.6px;  word-spacing: -2px;     white-space: nowrap; }"
+                + "b.name-normal  { font-size: 12px;  letter-spacing: normal;  word-spacing: normal;   white-space: nowrap; }"
+                + "b.name-tight   { font-size: 12px;  letter-spacing: -0.4px;  word-spacing: -1px;     white-space: nowrap; }"
+                + "b.name-tighter { font-size: 10px;  letter-spacing: -0.5px;  word-spacing: -1.5px;   white-space: nowrap; }"
+                + "b.name-squeeze { font-size: 9px;   letter-spacing: -0.6px;  word-spacing: -2px;     white-space: nowrap; }"
                 // ─────────────────────────────────────────────────────────────
 
                 // Roll cell — rowspans Student ID through Section rows
-                + ".roll-cell { width: 90px; vertical-align: middle; text-align: center; padding: 0 4px; }"
+                + ".roll-cell { width: 80px; vertical-align: middle; text-align: center; padding: 0 3px; }"
                 + ".roll-box { border: 2px solid #000; text-align: center; }"
                 + ".roll-title {"
                 + "  border-bottom: 2px solid #000;"
                 + "  font-weight: bold;"
-                + "  font-size: 11px;"
+                + "  font-size: 10px;"
                 + "  padding: 2px;"
                 + "}"
                 + ".roll-number {"
-                + "  font-size: 32px;"
+                + "  font-size: 26px;"           // was 32px — smaller roll number
                 + "  font-weight: bold;"
-                + "  padding: 4px 0;"
+                + "  padding: 3px 0;"
                 + "  line-height: 1.1;"
                 + "}";
     }
