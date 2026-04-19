@@ -35,7 +35,7 @@ public class SeatPlanService {
 
     // Card dimensions — reduced height to increase vertical gap between rows;
     // reduced width to increase horizontal gap between columns.
-    private static final int CARD_W         = 295;  // narrower → wider horizontal gap between cards (~61px center gap)
+    private static final int CARD_W         = 357;  // fills to edges with space-between, ~60px center gap
     private static final int CARD_H         = 265;  // content-driven; flex:1 removed from table-wrap
 
     private String logoBase64;
@@ -262,9 +262,9 @@ public class SeatPlanService {
             double nameWidth   = estimateNameWidth(nameEnglish);
 
             String nameClass;
-            if      (nameWidth <= 190) nameClass = "name-normal";
-            else if (nameWidth <= 220) nameClass = "name-tight";
-            else if (nameWidth <= 250) nameClass = "name-tighter";
+            if      (nameWidth <= 240) nameClass = "name-normal";
+            else if (nameWidth <= 270) nameClass = "name-tight";
+            else if (nameWidth <= 300) nameClass = "name-tighter";
             else                       nameClass = "name-squeeze";
 
             // rowspan covers all rows EXCEPT the name row:
@@ -344,7 +344,7 @@ public class SeatPlanService {
                 + "  height: " + (1123 - 2 * PAGE_PAD) + "px;"
                 + "  display: flex;"
                 + "  flex-wrap: wrap;"
-                + "  justify-content: space-evenly;"
+                + "  justify-content: space-between;"
                 + "  align-content: space-evenly;"
                 + "  page-break-after: always;"
                 + "  break-after: page;"
@@ -420,7 +420,7 @@ public class SeatPlanService {
                 + ".info-table-wrap { flex-shrink: 0; overflow: hidden; }"
                 + ".info-table { width: 100%; border-collapse: collapse; font-size: 12px; }"
                 + ".info-table td { padding: 1px 3px; vertical-align: middle; line-height: 1.35; }"
-                + ".info-table td.lbl { width: 80px; font-weight: 600; white-space: nowrap; }"
+                + ".info-table td.lbl { width: 90px; font-weight: 600; white-space: nowrap; }"
                 + ".info-table td.sep { width: 10px; }"
                 + ".info-table td.val { overflow: hidden; white-space: nowrap; }"
                 + ".info-table td.name-val { overflow: hidden; white-space: nowrap; }"
