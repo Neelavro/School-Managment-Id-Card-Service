@@ -377,7 +377,7 @@ public class IdCardService {
                 // Top teal strip
                 + ".card-header { background: #2e7d6e; height: 12px; flex-shrink: 0; }"
 
-                // Body — flex column
+                // Body — flex column, anchored to top so table position is consistent across all cards
                 + ".card-body {"
                 + "  flex: 1;"
                 + "  background: linear-gradient(to bottom, #b8ddf5 0%, #d4eefb 40%, #eaf6fd 65%, #ffffff 100%);"
@@ -385,6 +385,8 @@ public class IdCardService {
                 + "  position: relative;"
                 + "  display: flex;"
                 + "  flex-direction: column;"
+                + "  justify-content: flex-start;"
+                + "  align-items: stretch;"
                 + "  overflow: hidden;"
                 + "}"
 
@@ -392,7 +394,7 @@ public class IdCardService {
                 + ".arc-svg { position: absolute; bottom: 12px; left: 0; width: 100%; pointer-events: none; z-index: 1; }"
 
                 // School info
-                + ".school-info { text-align: center; margin-bottom: 6px; position: relative; z-index: 1; }"
+                + ".school-info { text-align: center; margin-bottom: 6px; position: relative; z-index: 1; flex-shrink: 0; }"
                 + ".school-name { font-size: 14px; font-weight: 900; color: #1a3a8a; line-height: 1.2; }"
                 + ".school-address { font-size: 8px; color: #cc1a1a; font-weight: 700; margin-top: 1px; text-transform: uppercase; white-space: nowrap; letter-spacing: -0.5px; word-spacing: -1.5px; }"
 
@@ -404,6 +406,7 @@ public class IdCardService {
                 + "  margin-bottom: 6px;"
                 + "  position: relative;"
                 + "  z-index: 1;"
+                + "  flex-shrink: 0;"
                 + "}"
 
                 // Yellow side badges
@@ -449,10 +452,11 @@ public class IdCardService {
                 + "  z-index: 1;"
                 + "  height: 14px;"
                 + "  line-height: 14px;"
+                + "  flex-shrink: 0;"
                 + "}"
 
                 // Info table
-                + ".info-table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; }"
+                + ".info-table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; flex-shrink: 0; }"
                 + ".info-table td { padding: 1px 2px; font-size: 8.95px; line-height: 1.3; color: #111; }"
                 + ".info-table td.lbl { font-weight: 700; width: 38px; color: #111; }"
                 + ".info-table td.sep { width: 8px; color: #444; }"
