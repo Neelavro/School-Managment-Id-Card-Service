@@ -223,7 +223,6 @@ public class IdCardService {
                     : "<img src=\"" + signatureBase64 + "\" class=\"signature-img\">";
 
             String name = s.getNameEnglish();
-            // Kept original logic, bumped each tier up by ~1-2px
             String nameFontSize = name.length() > 28 ? "7.5px" : name.length() > 22 ? "8.5px" : name.length() > 16 ? "10px" : "12px";
 
             // Build info rows
@@ -378,7 +377,7 @@ public class IdCardService {
                 // Top teal strip
                 + ".card-header { background: #2e7d6e; height: 12px; flex-shrink: 0; }"
 
-                // Body — flex column, justify-content flex-end pushes content toward footer
+                // Body — flex column
                 + ".card-body {"
                 + "  flex: 1;"
                 + "  background: linear-gradient(to bottom, #b8ddf5 0%, #d4eefb 40%, #eaf6fd 65%, #ffffff 100%);"
@@ -439,7 +438,7 @@ public class IdCardService {
                 + "}"
                 + ".photo-placeholder { font-size: 10px; color: #4a7a9a; text-align: center; line-height: 1.4; }"
 
-                // Student name — base controlled inline per card; tiers set in buildHtml
+                // Student name — fixed height so info table never shifts regardless of name length
                 + ".student-name {"
                 + "  text-align: center;"
                 + "  color: #5b1fa8;"
@@ -448,11 +447,14 @@ public class IdCardService {
                 + "  margin: 0 0 5px;"
                 + "  position: relative;"
                 + "  z-index: 1;"
+                + "  height: 14px;"
+                + "  line-height: 14px;"
                 + "}"
 
                 // Info table
                 + ".info-table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; }"
-                + ".info-table td { padding: 1px 2px; font-size: 8.95px; line-height: 1.3; color: #111; }"                + ".info-table td.lbl { font-weight: 700; width: 38px; color: #111; }"
+                + ".info-table td { padding: 1px 2px; font-size: 8.95px; line-height: 1.3; color: #111; }"
+                + ".info-table td.lbl { font-weight: 700; width: 38px; color: #111; }"
                 + ".info-table td.sep { width: 8px; color: #444; }"
                 + ".info-table td.val { font-weight: 600; color: #111; }"
                 + ".info-table tr:not(:first-child) td { border-top: 1px dashed #cde8d0; }"
