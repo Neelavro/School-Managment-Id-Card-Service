@@ -458,7 +458,7 @@ public class IdCardService {
                 + "}"
 
                 // Info table — margin-top reserves space for the absolutely positioned name above
-                + ".info-table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; flex-shrink: 0; margin-top: 9px; }"
+                + ".info-table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; flex-shrink: 0; margin-top: 11px; }"
                 + ".info-table td { padding: 1px 2px; font-size: 8.95px; line-height: 1.3; color: #111; }"
                 + ".info-table td.lbl { font-weight: 700; width: 38px; color: #111; }"
                 + ".info-table td.sep { width: 8px; color: #444; }"
