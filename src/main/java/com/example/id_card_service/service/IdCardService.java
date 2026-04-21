@@ -445,7 +445,7 @@ public class IdCardService {
                 // Student name — absolutely positioned, takes zero space in flex flow so info table never moves
                 + ".student-name {"
                 + "  position: absolute;"
-                + "  top: 127px;"
+                + "  top: 130;"
                 + "  left: 0;"
                 + "  right: 0;"
                 + "  text-align: center;"
@@ -458,7 +458,7 @@ public class IdCardService {
                 + "}"
 
                 // Info table — margin-top reserves space for the absolutely positioned name above
-                + ".info-table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; flex-shrink: 0; }"
+                + ".info-table { width: 100%; border-collapse: collapse; position: relative; z-index: 1; flex-shrink: 0; margin-top: 4px; }"
                 + ".info-table td { padding: 1px 2px; font-size: 8.95px; line-height: 1.3; color: #111; }"
                 + ".info-table td.lbl { font-weight: 700; width: 38px; color: #111; }"
                 + ".info-table td.sep { width: 8px; color: #444; }"
