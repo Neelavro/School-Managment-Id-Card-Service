@@ -37,7 +37,7 @@ public class AcademicServiceClient {
         if (classId         != null) url.append("&classId=").append(classId);
         if (genderSectionId != null) url.append("&genderSectionId=").append(genderSectionId);
         if (sectionId       != null) url.append("&sectionId=").append(sectionId);
-        if (groupId         != null) url.append("&groupId=").append(groupId);
+        if (groupId != null) url.append("&studentGroupId=").append(groupId);  // was &groupId=
         if (startRoll       != null) url.append("&startRoll=").append(startRoll);  // ← add
         if (endRoll         != null) url.append("&endRoll=").append(endRoll);      // ← add
 
